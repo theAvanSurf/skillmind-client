@@ -18,7 +18,12 @@ export default function ContinueLearning({ title, subtitle, courses }: ContinueL
           <h2 className="text-2xl font-bold text-gray-900">{title}</h2>
           {subtitle && <p className="text-gray-600 mt-1">{subtitle}</p>}
         </div>
-        <span className="text-sm font-medium text-orange-600 hover:text-orange-700 cursor-pointer">View all</span>
+        <button
+          type="button"
+          className="text-sm font-medium text-orange-600 hover:text-orange-700 cursor-pointer"
+        >
+          View all
+        </button>
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
