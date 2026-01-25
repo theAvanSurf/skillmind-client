@@ -14,10 +14,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   dueDate,
   onClick,
 }) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (!onClick) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick();
+    }
+  };
+
   return (
     <div
       className="group cursor-pointer rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-all duration-300 hover:shadow-md hover:border-gray-300"
       onClick={onClick}
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onKeyDown={handleKeyDown}
     >
       {/* Project Title */}
       <h3 className="mb-2 text-sm font-semibold text-gray-900 line-clamp-1">
