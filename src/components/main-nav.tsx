@@ -32,8 +32,8 @@ const MainNav: React.FC<MainNavProps> = ({
 
         {/* Navigation links */}
         <ul className="nav-links">
-          {navLinks.map((link, index) => (
-            <li key={index}>
+          {navLinks.map((link) => (
+            <li key={link.href}>
               <a href={link.href} className="nav-link">
                 {link.label}
               </a>
