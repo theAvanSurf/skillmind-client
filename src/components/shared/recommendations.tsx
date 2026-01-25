@@ -27,6 +27,14 @@ export default function Recommendations({ title, subtitle, courses }: Recommenda
           <div
             key={course.id}
             className="group cursor-pointer overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:shadow-xl"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+                event.preventDefault();
+                event.currentTarget.click();
+              }
+            }}
           >
             <div className="relative h-40 w-full overflow-hidden bg-gray-100">
               <div className="absolute left-3 top-3 rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-gray-700 backdrop-blur-sm">
