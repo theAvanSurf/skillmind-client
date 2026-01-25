@@ -23,7 +23,16 @@ const CourseCard: React.FC<CourseCardProps> = ({
   return (
     <div
       className="group cursor-pointer overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:shadow-xl"
+      role="button"
+      tabIndex={0}
       onClick={onClick}
+      onKeyDown={(e) => {
+        if (!onClick) return;
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
     >
       {/* Course Image */}
       <div className="relative h-40 w-full overflow-hidden bg-gray-100">
