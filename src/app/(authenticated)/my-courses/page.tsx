@@ -21,45 +21,6 @@ const favoritesData = [
   { id: 3, title: "Cloud Computing Fundamentals", instructor: "Mike Chen", duration: "18 hours", isFavorite: true },
 ];
 
-const allCoursesData = [
-  {
-    title: "React Advanced Hooks",
-    image:
-      "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=1200&q=80",
-    progress: 75,
-    duration: "14h 20m",
-    lessons: 34,
-    category: "Frontend",
-  },
-  {
-    title: "Node.js Microservices",
-    image:
-      "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
-    progress: 45,
-    duration: "18h 50m",
-    lessons: 42,
-    category: "Backend",
-  },
-  {
-    title: "Tailwind CSS Mastery",
-    image:
-      "https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=1200&q=80",
-    progress: 88,
-    duration: "10h 15m",
-    lessons: 25,
-    category: "Frontend",
-  },
-  {
-    title: "Docker & Kubernetes",
-    image:
-      "https://images.unsplash.com/photo-1516321318423-f06f70d504d0?auto=format&fit=crop&w=1200&q=80",
-    progress: 32,
-    duration: "22h 40m",
-    lessons: 48,
-    category: "DevOps",
-  },
-];
-
 export default function MyCoursesPage() {
   return (
     <div className="space-y-10">
