@@ -32,44 +32,24 @@ export default function CoursePromo({
   
   const colorConfig = {
     blue: {
-      gradientFrom: 'from-blue-500',
-      gradientTo: 'to-indigo-600',
       bgLight: 'bg-blue-50',
       text: 'text-blue-600',
-      border: 'border-blue-200',
-      hover: 'hover:bg-blue-100'
     },
     green: {
-      gradientFrom: 'from-green-500',
-      gradientTo: 'to-emerald-600',
       bgLight: 'bg-green-50',
       text: 'text-green-600',
-      border: 'border-green-200',
-      hover: 'hover:bg-green-100'
     },
     purple: {
-      gradientFrom: 'from-purple-500',
-      gradientTo: 'to-pink-600',
       bgLight: 'bg-purple-50',
       text: 'text-purple-600',
-      border: 'border-purple-200',
-      hover: 'hover:bg-purple-100'
     },
     orange: {
-      gradientFrom: 'from-orange-500',
-      gradientTo: 'to-amber-600',
       bgLight: 'bg-orange-50',
       text: 'text-orange-600',
-      border: 'border-orange-200',
-      hover: 'hover:bg-orange-100'
     },
     indigo: {
-      gradientFrom: 'from-indigo-500',
-      gradientTo: 'to-blue-600',
       bgLight: 'bg-indigo-50',
       text: 'text-indigo-600',
-      border: 'border-indigo-200',
-      hover: 'hover:bg-indigo-100'
     }
   };
 
