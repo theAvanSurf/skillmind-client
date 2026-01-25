@@ -1,5 +1,4 @@
 import CoursePromo from "@/src/components/shared/course-promo";
-import CourseCard from "@/src/components/shared/course-card";
 import ContinueLearning from "@/src/components/shared/continue-learning";
 import Recommendations from "@/src/components/shared/recommendations";
 import Favorites from "@/src/components/shared/favorites";
