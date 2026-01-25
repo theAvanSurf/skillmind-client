@@ -1,3 +1,4 @@
+"use client"
 import { BookOpen, CheckCircle2, Flame, FolderOpen, TrendingUp } from "lucide-react";
 
 import CourseCard from "@/src/components/shared/course-card";
