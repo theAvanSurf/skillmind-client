@@ -1,6 +1,6 @@
 "use client";
 
-import { useAuthStore } from "@/src/store/auth.store";
+import { useAuthStore } from "src/store/auth.store";
 import { useRouter } from "next/navigation";
 
 export function useAuth() {

@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Input from "../ui/Input";
 import Button from "../ui/Button";
-import { validateEmail } from "@/utils/validators";
-import { useAuth } from "@/hooks/useAuth";
+import { validateEmail } from "src/utils/validators";
+import { useAuth } from "src/hooks/useAuth";
 
 export default function LoginForm() {
   const { login, loading } = useAuth();
