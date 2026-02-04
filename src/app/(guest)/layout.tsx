@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
 type Props = {
@@ -13,30 +16,36 @@ const guestLinks = [
 ];
 
 export default function Layout({ children }: Props) {
+	const pathname = usePathname();
+
+	
+	const hideNav = pathname === "/login" || pathname === "/register";
+
+
 	return (
 		<div className="guest-shell">
-			<header className="guest-header">
-				<div className="guest-nav">
-					<Link href="/" className="brand">Skillmind</Link>
+			{!hideNav && (
+				<header className="guest-header">
+					<div className="guest-nav">
+						<Link href="/" className="brand">Skillmind</Link>
 
-					<nav className="links">
-						{guestLinks.map((item) => (
-							<Link key={item.href} href={item.href} className="link">
-								{item.label}
-							</Link>
-						))}
-					</nav>
+						<nav className="links">
+							{guestLinks.map((item) => (
+								<Link key={item.href} href={item.href} className="link">
+									{item.label}
+								</Link>
+							))}
+						</nav>
 
-					<div className="actions">
-						<Link href="/login" className="ghost">Iniciar sesion</Link>
-						<Link href="/signup" className="primary">Crear cuenta</Link>
+						<div className="actions">
+							<Link href="/login" className="ghost">Iniciar sesion</Link>
+							<Link href="/signup" className="primary">Crear cuenta</Link>
+						</div>
 					</div>
-				</div>
-			</header>
+				</header>
+			)}
 
-			<main className="guest-content">
-				{children}
-			</main>
+			<main className="guest-content">{children}</main>
 
 			<style jsx>{`
 				.guest-shell {
