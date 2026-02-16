@@ -19,7 +19,9 @@ export default function Layout({ children }: Props) {
 	const pathname = usePathname();
 
 	
-	const hideNav = pathname === "/login" || pathname === "/register";
+const hideNav =
+  pathname === "/login" || pathname.startsWith("/register");
+
 
 
 	return (
