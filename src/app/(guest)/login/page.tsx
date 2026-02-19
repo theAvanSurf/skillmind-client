@@ -56,7 +56,7 @@ export default function LoginPage() {
           <div className="rounded-xl sm:rounded-2xl bg-white/80 p-5 sm:p-8 shadow-xl backdrop-blur-sm">
             <div className="mb-6 sm:mb-8 text-center">
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Bienvenido
+                Welcome
               </h1>
               <p className="mt-2 text-sm sm:text-base text-gray-600">
                 Inicia sesión en tu cuenta de SkillMind
@@ -69,7 +69,7 @@ export default function LoginPage() {
                   htmlFor="email"
                   className="mb-1.5 sm:mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Correo electrónico
+                  Email
                 </label>
                 <input
                   id="email"
@@ -87,7 +87,7 @@ export default function LoginPage() {
                   htmlFor="password"
                   className="mb-1.5 sm:mb-2 block text-sm font-medium text-gray-700"
                 >
-                  Contraseña
+                  Password
                 </label>
                 <div className="relative">
                   <input
@@ -123,7 +123,7 @@ export default function LoginPage() {
                     className="h-4 w-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500"
                   />
                   <span className="text-xs sm:text-sm text-gray-600">
-                    Recordarme
+                    Remember
                   </span>
                 </label>
                 <a
@@ -151,18 +151,18 @@ export default function LoginPage() {
                     Cargando...
                   </span>
                 ) : (
-                  "Iniciar sesión"
+                  "Login"
                 )}
               </button>
             </div>
 
             <p className="mt-5 sm:mt-6 text-center text-xs sm:text-sm text-gray-600">
-              ¿No tienes una cuenta?{" "}
+              ¿You dont have an account?{" "}
               <button
                 onClick={() => router.push("/register")}
                 className="font-semibold text-orange-500 hover:text-orange-600"
               >
-                Regístrate
+                Create Account
               </button>
             </p>
           </div>
