@@ -1,15 +1,8 @@
 import React from "react";
 import CourseCard from "./course-card";
+import type { Course } from "@/types/course.types";
 
-export type Course = {
-  id: string;
-  title: string;
-  image: string;
-  progress: number;
-  duration: string;
-  lessons: number;
-  category?: string;
-};
+export type { Course };
 
 type CourseGridProps = {
   courses: Course[];

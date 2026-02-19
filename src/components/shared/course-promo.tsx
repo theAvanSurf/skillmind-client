@@ -32,31 +32,31 @@ export default function CoursePromo({
   
   const colorConfig = {
     blue: {
-      bgLight: 'bg-blue-50',
-      text: 'text-blue-600',
+      bgLight: 'bg-blue-500/10',
+      text: 'text-blue-400',
     },
     green: {
-      bgLight: 'bg-green-50',
-      text: 'text-green-600',
+      bgLight: 'bg-green-500/10',
+      text: 'text-green-400',
     },
     purple: {
-      bgLight: 'bg-purple-50',
-      text: 'text-purple-600',
+      bgLight: 'bg-purple-500/10',
+      text: 'text-purple-400',
     },
     orange: {
-      bgLight: 'bg-orange-50',
-      text: 'text-orange-600',
+      bgLight: 'bg-orange-500/10',
+      text: 'text-orange-400',
     },
     indigo: {
-      bgLight: 'bg-indigo-50',
-      text: 'text-indigo-600',
+      bgLight: 'bg-indigo-500/10',
+      text: 'text-indigo-400',
     }
   };
 
   const colors = colorConfig[accentColor];
 
   return (
-    <div className="relative overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-gray-200">
+    <div className="relative overflow-hidden rounded-2xl border border-white/[0.08] bg-white/[0.04] backdrop-blur-sm">
       {backgroundImage ? (
         <div className="relative h-40 w-full">
           <div
@@ -83,7 +83,7 @@ export default function CoursePromo({
             {primaryAction && (
               <Link
                 href={primaryAction.href ?? '#'}
-                className="rounded-lg bg-linear-to-r from-yellow-500 to-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow transition hover:opacity-90"
+                className="rounded-xl bg-linear-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-500/20 transition hover:from-orange-600 hover:to-orange-700"
               >
                 {primaryAction.text}
               </Link>
@@ -91,7 +91,7 @@ export default function CoursePromo({
             {secondaryAction && (
               <Link
                 href={secondaryAction.href ?? '#'}
-                className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 transition hover:bg-gray-50"
+                className="rounded-xl border border-white/10 px-4 py-2.5 text-sm font-medium text-white/55 transition hover:bg-white/[0.06]"
               >
                 {secondaryAction.text}
               </Link>

@@ -1,124 +1,161 @@
 "use client"
 
-import React, { useState } from "react"
-import { Brain } from "lucide-react"
+import React from "react"
+import { useForm, Controller } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { z } from "zod"
 import { useRouter } from "next/navigation"
+import PhoneInput, { isValidPhoneNumber, getCountries } from "react-phone-number-input"
+import en from "react-phone-number-input/locale/en.json"
+import "react-phone-number-input/style.css"
+import AuthLayout from "./AuthLayout"
+
+const today = new Date()
+const maxBirthDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate())
+const minBirthDate = new Date(today.getFullYear() - 120, today.getMonth(), today.getDate())
+
+const schema = z.object({
+  firstName: z
+    .string()
+    .min(2, "At least 2 characters")
+    .max(50, "Max 50 characters")
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Letters only"),
+  lastName: z
+    .string()
+    .min(2, "At least 2 characters")
+    .max(50, "Max 50 characters")
+    .regex(/^[a-zA-ZÀ-ÿ\s'-]+$/, "Letters only"),
+  birthDate: z
+    .string()
+    .min(1, "Date of birth is required")
+    .refine((v) => {
+      const d = new Date(v)
+      return !isNaN(d.getTime()) && d <= maxBirthDate && d >= minBirthDate
+    }, "You must be at least 13 years old"),
+  phone: z
+    .string()
+    .min(1, "Phone number is required")
+    .refine((v) => isValidPhoneNumber(v), "Enter a valid phone number"),
+  country: z.string().min(1, "Please select your country"),
+})
+
+type FormData = z.infer<typeof schema>
+
+const countries = getCountries()
+const countryNames = en as Record<string, string>
+
+const field = (error?: boolean) =>
+  `w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition bg-white/[0.06] focus:bg-white/[0.09] focus:ring-2 ${
+    error
+      ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/15"
+      : "border-white/10 focus:border-orange-500/50 focus:ring-orange-500/15"
+  }`
+
+const FieldError = ({ msg }: { msg?: string }) =>
+  msg ? <p className="mt-1 text-xs text-red-400">{msg}</p> : null
 
 export default function PersonalInfoStep() {
   const router = useRouter()
-
-  const [form, setForm] = useState({
-    name: "",
-    lastName: "",
-    birthDate: "",
-    phone: "",
-    country: "",
+  const {
+    register,
+    handleSubmit,
+    control,
+    formState: { errors, isValid },
+  } = useForm<FormData>({
+    resolver: zodResolver(schema),
+    mode: "onTouched",
   })
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    })
-  }
-
-  const isFormValid = Object.values(form).every(
-    value => value.trim() !== ""
-  )
-
   return (
-    <div className="min-h-screen w-full bg-gradient-to-b from-gray-100 via-gray-100 to-orange-400 flex flex-col px-6 pt-6">
-      
-      {/* Logo */}
-      <header className="p-4 sm:p-6">
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Brain className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500" />
-            <div className="absolute -top-1 -right-1 h-2 w-2 sm:h-3 sm:w-3 rounded-full bg-purple-500" />
+    <AuthLayout step={1} totalSteps={5} title="Personal Information">
+      <div className="mb-5">
+        <h2 className="text-xl font-bold text-white">Personal Information</h2>
+        <p className="mt-1 text-xs text-white/40">Tell us about yourself to get started</p>
+      </div>
+
+      <form onSubmit={handleSubmit(() => router.push("/register/step2"))} className="space-y-3" noValidate>
+        {/* Name row */}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <input
+              {...register("firstName")}
+              type="text"
+              placeholder="First Name"
+              autoComplete="given-name"
+              className={field(!!errors.firstName)}
+            />
+            <FieldError msg={errors.firstName?.message} />
           </div>
-          <span className="text-lg sm:text-xl font-semibold">
-            <span className="text-orange-500">Skill</span>
-            <span className="text-purple-600">Mind</span>
-          </span>
-        </div>
-      </header>
-
-      {/* Content */}
-      <div className="w-full max-w-md mx-auto">
-
-        {/* Step info */}
-        <div className="text-center mb-6">
-          <p className="text-sm font-semibold text-gray-900">Step 1 of 5</p>
-          <p className="text-xs text-gray-600 mt-1">Personal Information</p>
+          <div>
+            <input
+              {...register("lastName")}
+              type="text"
+              placeholder="Last Name"
+              autoComplete="family-name"
+              className={field(!!errors.lastName)}
+            />
+            <FieldError msg={errors.lastName?.message} />
+          </div>
         </div>
 
-        {/* Form */}
-        <div className="space-y-3">
+        {/* Birth date */}
+        <div>
           <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            type="text"
-            placeholder="Name"
-            required
-            className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm"
-          />
-
-          <input
-            name="lastName"
-            value={form.lastName}
-            onChange={handleChange}
-            type="text"
-            placeholder="Last Name"
-            required
-            className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm"
-          />
-
-          <input
-            name="birthDate"
-            value={form.birthDate}
-            onChange={handleChange}
+            {...register("birthDate")}
             type="date"
-            required
-            className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm"
+            max={maxBirthDate.toISOString().split("T")[0]}
+            min={minBirthDate.toISOString().split("T")[0]}
+            className={`${field(!!errors.birthDate)} scheme-dark`}
           />
-
-          <input
-            name="phone"
-            value={form.phone}
-            onChange={handleChange}
-            type="tel"
-            placeholder="Phone Number"
-            required
-            className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm"
-          />
-
-          <input
-            name="country"
-            value={form.country}
-            onChange={handleChange}
-            type="text"
-            placeholder="Country of Residency"
-            required
-            className="w-full rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm"
-          />
+          <FieldError msg={errors.birthDate?.message} />
         </div>
 
-        {/* Button */}
+        {/* Phone with country flag */}
+        <div>
+          <Controller
+            name="phone"
+            control={control}
+            render={({ field: { onChange, value } }) => (
+              <PhoneInput
+                international
+                defaultCountry="US"
+                value={value}
+                onChange={onChange}
+                className={`phone-dark ${errors.phone ? "phone-dark--error" : ""}`}
+              />
+            )}
+          />
+          <FieldError msg={errors.phone?.message} />
+        </div>
+
+        {/* Country */}
+        <div>
+          <select
+            {...register("country")}
+            className={`${field(!!errors.country)} scheme-dark`}
+          >
+            <option value="">Country of Residency</option>
+            {countries.map((code) => (
+              <option key={code} value={code}>
+                {countryNames[code] ?? code}
+              </option>
+            ))}
+          </select>
+          <FieldError msg={errors.country?.message} />
+        </div>
+
         <button
-          disabled={!isFormValid}
-          onClick={() => router.push("/register/step2")}
-          className={`mt-6 w-full rounded-full py-3 text-sm font-medium text-white transition
-            ${
-              isFormValid
-                ? "bg-purple-500 hover:bg-purple-600"
-                : "bg-gray-400 cursor-not-allowed"
-            }
-          `}
+          type="submit"
+          disabled={!isValid}
+          className={`mt-2 w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
+            isValid
+              ? "bg-linear-to-r from-orange-500 to-orange-600 shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700"
+              : "cursor-not-allowed bg-white/10 text-white/30"
+          }`}
         >
           Continue
         </button>
-      </div>
-    </div>
+      </form>
+    </AuthLayout>
   )
 }
