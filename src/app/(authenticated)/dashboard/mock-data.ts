@@ -1,4 +1,4 @@
-import { CourseStatItem } from "@/src/components/shared/courses-stats";
+import type { CourseStatItem } from "@/types/course.types";
 
 export const statItems: CourseStatItem[] = [
   { label: "Active Courses", value: 5 },

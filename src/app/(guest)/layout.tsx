@@ -4,186 +4,69 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
-type Props = {
-	children: ReactNode;
-};
+interface Props {
+  children: ReactNode;
+}
 
 const guestLinks = [
-	{ href: "/", label: "Inicio" },
-	{ href: "/courses", label: "Cursos" },
-	{ href: "/pricing", label: "Planes" },
-	{ href: "/about", label: "Sobre nosotros" },
+  { href: "/", label: "Inicio" },
+  { href: "/courses", label: "Cursos" },
+  { href: "/pricing", label: "Planes" },
+  { href: "/about", label: "Sobre nosotros" },
 ];
 
-export default function Layout({ children }: Props) {
-	const pathname = usePathname();
+export default function GuestLayout({ children }: Props) {
+  const pathname = usePathname();
 
-	
-const hideNav =
-  pathname === "/login" || pathname.startsWith("/register");
+  const hideNav =
+    pathname === "/login" || pathname.startsWith("/register");
 
+  return (
+    <div className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,#eef2ff_0,transparent_28%),radial-gradient(circle_at_90%_15%,#cffafe_0,transparent_22%),#f8fafc] text-slate-900">
+      {!hideNav && (
+        <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/82 backdrop-blur-md">
+          <div className="mx-auto grid max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-5 py-3.5">
+            {/* Brand */}
+            <Link
+              href="/"
+              className="text-[18px] font-bold tracking-tight text-slate-900 no-underline"
+            >
+              Skillmind
+            </Link>
 
+            {/* Nav links */}
+            <nav className="flex flex-wrap items-center justify-center gap-1">
+              {guestLinks.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className="rounded-xl px-3 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
 
-	return (
-		<div className="guest-shell">
-			{!hideNav && (
-				<header className="guest-header">
-					<div className="guest-nav">
-						<Link href="/" className="brand">Skillmind</Link>
+            {/* Actions */}
+            <div className="flex items-center gap-2.5">
+              <Link
+                href="/login"
+                className="rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-900 transition hover:border-sky-400 hover:shadow-[0_8px_20px_rgba(14,165,233,0.12)]"
+              >
+                Iniciar sesion
+              </Link>
+              <Link
+                href="/register"
+                className="rounded-xl bg-linear-to-br from-sky-400 to-indigo-500 px-4 py-2 text-sm font-bold text-white shadow-[0_10px_30px_rgba(99,102,241,0.25)] transition hover:-translate-y-px hover:shadow-[0_14px_34px_rgba(99,102,241,0.3)]"
+              >
+                Crear cuenta
+              </Link>
+            </div>
+          </div>
+        </header>
+      )}
 
-						<nav className="links">
-							{guestLinks.map((item) => (
-								<Link key={item.href} href={item.href} className="link">
-									{item.label}
-								</Link>
-							))}
-						</nav>
-
-						<div className="actions">
-							<Link href="/login" className="ghost">Iniciar sesion</Link>
-							<Link href="/signup" className="primary">Crear cuenta</Link>
-						</div>
-					</div>
-				</header>
-			)}
-
-			<main className="guest-content">{children}</main>
-
-			<style jsx>{`
-				.guest-shell {
-					min-height: 100vh;
-					background: radial-gradient(circle at 10% 10%, #eef2ff 0, transparent 28%),
-						radial-gradient(circle at 90% 15%, #cffafe 0, transparent 22%),
-						#f8fafc;
-					color: #0f172a;
-				}
-
-				.guest-header {
-					position: sticky;
-					top: 0;
-					z-index: 5;
-					backdrop-filter: blur(8px);
-					background: rgba(255, 255, 255, 0.82);
-					border-bottom: 1px solid #e2e8f0;
-				}
-
-				.guest-nav {
-					display: grid;
-					grid-template-columns: auto 1fr auto;
-					align-items: center;
-					gap: 1rem;
-					max-width: 1200px;
-					margin: 0 auto;
-					padding: 0.9rem 1.25rem;
-				}
-
-				.brand {
-					font-weight: 700;
-					font-size: 18px;
-					letter-spacing: -0.01em;
-					color: #0f172a;
-					text-decoration: none;
-				}
-
-				.links {
-					display: flex;
-					align-items: center;
-					justify-content: center;
-					gap: 1rem;
-					flex-wrap: wrap;
-				}
-
-				.link {
-					color: #475569;
-					font-weight: 500;
-					font-size: 14px;
-					text-decoration: none;
-					padding: 0.45rem 0.7rem;
-					border-radius: 10px;
-					transition: background 0.2s ease, color 0.2s ease;
-				}
-
-				.link:hover {
-					color: #0f172a;
-					background: #e2e8f0;
-				}
-
-				.actions {
-					display: flex;
-					align-items: center;
-					gap: 0.65rem;
-				}
-
-				.ghost {
-					padding: 0.5rem 0.85rem;
-					border-radius: 10px;
-					text-decoration: none;
-					font-weight: 600;
-					color: #0f172a;
-					border: 1px solid #e2e8f0;
-					background: #ffffff;
-					transition: border 0.2s ease, box-shadow 0.2s ease;
-				}
-
-				.ghost:hover {
-					border-color: #0ea5e9;
-					box-shadow: 0 8px 20px rgba(14, 165, 233, 0.12);
-				}
-
-				.primary {
-					padding: 0.55rem 1rem;
-					border-radius: 12px;
-					text-decoration: none;
-					font-weight: 700;
-					color: #ffffff;
-					background: linear-gradient(135deg, #0ea5e9, #6366f1);
-					box-shadow: 0 10px 30px rgba(99, 102, 241, 0.25);
-					transition: transform 0.15s ease, box-shadow 0.15s ease;
-				}
-
-				.primary:hover {
-					transform: translateY(-1px);
-					box-shadow: 0 14px 34px rgba(99, 102, 241, 0.3);
-				}
-
-				.guest-content {
-					max-width: 1200px;
-					margin: 0 auto;
-					padding: 2.25rem 1.25rem 3rem;
-				}
-
-				@media (max-width: 900px) {
-					.guest-nav {
-						grid-template-columns: 1fr;
-						grid-template-areas:
-							"brand actions"
-							"links links";
-					}
-
-					.links {
-						justify-content: flex-start;
-					}
-
-					.actions {
-						justify-content: flex-end;
-					}
-				}
-
-				@media (max-width: 640px) {
-					.guest-header {
-						position: static;
-					}
-
-					.guest-nav {
-						gap: 0.75rem;
-						padding: 0.75rem 1rem;
-					}
-
-					.guest-content {
-						padding: 1.75rem 1rem 2.5rem;
-					}
-				}
-			`}</style>
-		</div>
-	);
+      <main className="mx-auto max-w-7xl px-5 py-9">{children}</main>
+    </div>
+  );
 }

@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { Plus, Pencil, Check, Baby, ChevronLeft, Trash2, User } from "lucide-react"
 import { useRouter } from "next/navigation"
-import AuthLayout from "./AuthLayout"
+import AuthLayout from "../components/AuthLayout"
 import type { Profile } from "@/types/profile.types"
 
 /* ─── Data ───────────────────────────────────────────── */
