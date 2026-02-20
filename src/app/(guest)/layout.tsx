@@ -57,7 +57,7 @@ export default function GuestLayout({ children }: Props) {
               </Link>
               <Link
                 href="/register"
-                className="rounded-xl bg-gradient-to-br from-sky-400 to-indigo-500 px-4 py-2 text-sm font-bold text-white shadow-[0_10px_30px_rgba(99,102,241,0.25)] transition hover:-translate-y-px hover:shadow-[0_14px_34px_rgba(99,102,241,0.3)]"
+                className="rounded-xl bg-linear-to-br from-sky-400 to-indigo-500 px-4 py-2 text-sm font-bold text-white shadow-[0_10px_30px_rgba(99,102,241,0.25)] transition hover:-translate-y-px hover:shadow-[0_14px_34px_rgba(99,102,241,0.3)]"
               >
                 Crear cuenta
               </Link>

@@ -2,12 +2,12 @@
 
 :root {
   /* Brand */
-  --brand-orange: #f97316;
+  --brand-orange: #3b82f6;
   --brand-orange-dark: #ea580c;
   --brand-purple: #7c3aed;
 
   /* Auth dark theme */
-  --auth-bg: #07071a;
+  --auth-bg: #0a0a0f;
   --auth-card: rgba(255, 255, 255, 0.04);
   --auth-border: rgba(255, 255, 255, 0.08);
   --auth-input: rgba(255, 255, 255, 0.06);

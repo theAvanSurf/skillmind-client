@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import AuthLayout from "./AuthLayout"
+import AuthLayout from "../components/AuthLayout"
 
 const CODE_LENGTH = 6
 const RESEND_COOLDOWN = 60
@@ -104,7 +104,7 @@ export default function VerificationStep() {
 
   const inputCls = error
     ? "h-12 w-12 rounded-xl border border-red-500/50 bg-red-500/[0.06] text-center text-lg font-semibold text-white outline-none transition focus:border-red-500/70 focus:ring-2 focus:ring-red-500/15"
-    : "h-12 w-12 rounded-xl border border-white/10 bg-white/[0.06] text-center text-lg font-semibold text-white outline-none transition focus:border-orange-500/50 focus:bg-white/[0.09] focus:ring-2 focus:ring-orange-500/15"
+    : "h-12 w-12 rounded-xl border border-white/10 bg-white/[0.06] text-center text-lg font-semibold text-white outline-none transition focus:border-blue-500/50 focus:bg-white/[0.09] focus:ring-2 focus:ring-blue-500/15"
 
   return (
     <AuthLayout step={5} totalSteps={5} title="Verification">
@@ -147,7 +147,7 @@ export default function VerificationStep() {
           onClick={handleVerify}
           className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
             isFilled
-              ? "bg-linear-to-r from-orange-500 to-orange-600 shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700"
+              ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
               : "cursor-not-allowed bg-white/10 text-white/30"
           }`}
         >

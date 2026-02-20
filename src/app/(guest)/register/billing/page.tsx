@@ -5,7 +5,7 @@ import { Elements } from "@stripe/react-stripe-js"
 import { useRouter, useSearchParams } from "next/navigation"
 import PaymentForm from "@/app/(guest)/register/PaymentForm"
 import BillingSummary from "@/app/(guest)/register/BillingSummary"
-import AuthLayout from "@/components/forms/AuthLayout"
+import AuthLayout from "@/features/auth/components/AuthLayout"
 import { stripePromise } from "@/lib/stripe"
 import type { PlanType, BillingInfo } from "@/types/billing.types"
 
@@ -31,7 +31,7 @@ export default function BillingPage() {
     <Suspense fallback={
       <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500" />
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
       </AuthLayout>
     }>
@@ -114,7 +114,7 @@ function BillingPageInner() {
     return (
       <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
         <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
       </AuthLayout>
     )
@@ -127,7 +127,7 @@ function BillingPageInner() {
           <p className="text-red-500 mb-4">{error}</p>
           <button 
             onClick={() => window.location.reload()}
-            className="text-purple-600 underline"
+            className="text-indigo-700 underline"
           >
             Try Again
           </button>
@@ -139,7 +139,7 @@ function BillingPageInner() {
   const appearance = {
     theme: 'night' as const,
     variables: {
-      colorPrimary: '#f97316',
+      colorPrimary: '#3b82f6',
       colorBackground: '#ffffff0a',
       colorText: '#ffffff',
       colorTextSecondary: '#ffffff99',

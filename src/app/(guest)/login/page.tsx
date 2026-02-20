@@ -3,10 +3,10 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import AuthLayout from "@/components/forms/AuthLayout";
+import AuthLayout from "@/features/auth/components/AuthLayout";
 
 const inputCls =
-  "w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition focus:border-orange-500/50 focus:bg-white/[0.09] focus:ring-2 focus:ring-orange-500/15";
+  "w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition focus:border-blue-500/50 focus:bg-white/[0.09] focus:ring-2 focus:ring-blue-500/15";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -91,13 +91,13 @@ export default function LoginPage() {
           <label className="flex cursor-pointer items-center gap-2">
             <input
               type="checkbox"
-              className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 accent-orange-500"
+              className="h-3.5 w-3.5 rounded border-white/20 bg-white/5 accent-blue-500"
             />
             <span className="text-xs text-white/45">Remember me</span>
           </label>
           <a
             href="#"
-            className="text-xs font-medium text-orange-400 transition hover:text-orange-300"
+            className="text-xs font-medium text-blue-400 transition hover:text-blue-300"
           >
             Forgot password?
           </a>
@@ -114,7 +114,7 @@ export default function LoginPage() {
         <button
           onClick={handleLogin}
           disabled={loading || !email || !password}
-          className="w-full rounded-xl bg-linear-to-r from-orange-500 to-orange-600 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:from-orange-600 hover:to-orange-700 hover:shadow-orange-500/40 disabled:cursor-not-allowed disabled:opacity-40"
+          className="w-full rounded-xl bg-linear-to-r from-blue-500 to-blue-600 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/40 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {loading ? (
             <span className="flex items-center justify-center gap-2">
@@ -131,7 +131,7 @@ export default function LoginPage() {
         Don&apos;t have an account?{" "}
         <button
           onClick={() => router.push("/register")}
-          className="font-semibold text-orange-400 transition hover:text-orange-300"
+          className="font-semibold text-blue-400 transition hover:text-blue-300"
         >
           Create Account
         </button>

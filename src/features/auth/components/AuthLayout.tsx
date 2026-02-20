@@ -21,23 +21,23 @@ export default function AuthLayout({
   wide = false,
 }: AuthLayoutProps) {
   return (
-    <div className="fixed inset-0 flex flex-col overflow-auto bg-[#07071a] auth-scroll">
+    <div className="fixed inset-0 flex flex-col overflow-auto bg-[#0a0a0f] auth-scroll">
       {/* Atmospheric glow blobs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div className="absolute -left-48 top-0 h-150 w-150 rounded-full bg-purple-700/20 blur-[140px]" />
-        <div className="absolute -right-32 bottom-0 h-125 w-125 rounded-full bg-orange-600/15 blur-[120px]" />
-        <div className="absolute left-1/2 top-1/3 h-100 w-100 -translate-x-1/2 rounded-full bg-orange-500/5 blur-[100px]" />
+        <div className="absolute -left-48 top-0 h-150 w-150 rounded-full bg-blue-900/20 blur-[140px]" />
+        <div className="absolute -right-32 bottom-0 h-125 w-125 rounded-full bg-blue-600/15 blur-[120px]" />
+        <div className="absolute left-1/2 top-1/3 h-100 w-100 -translate-x-1/2 rounded-full bg-blue-500/5 blur-[100px]" />
       </div>
 
       {/* Header */}
       <header className="relative z-10 shrink-0 px-6 pt-5 pb-2">
         <div className="flex items-center gap-2">
           <div className="relative">
-            <Brain className="h-6 w-6 text-orange-500" />
-            <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-purple-500" />
+            <Brain className="h-6 w-6 text-blue-500" />
+            <div className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-indigo-500" />
           </div>
           <span className="text-lg font-semibold tracking-tight">
-            <span className="text-orange-400">Skill</span>
+            <span className="text-blue-400">Skill</span>
             <span className="text-white">Mind</span>
           </span>
         </div>
@@ -50,7 +50,7 @@ export default function AuthLayout({
           {step && (
             <div className="mb-5 px-1">
               <div className="mb-2.5 flex items-center justify-between">
-                <span className="text-[11px] font-semibold uppercase tracking-widest text-orange-400/80">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-blue-400/80">
                   Step {step} of {totalSteps}
                 </span>
                 {title && (
@@ -64,7 +64,7 @@ export default function AuthLayout({
                     key={i}
                     className={`h-0.75 flex-1 rounded-full transition-all duration-500 ${
                       i < step
-                        ? "bg-linear-to-r from-orange-500 to-amber-400"
+                        ? "bg-linear-to-r from-blue-500 to-sky-400"
                         : "bg-white/10"
                     }`}
                   />

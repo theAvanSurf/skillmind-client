@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense } from "react";
-import Step5Form from "@/components/forms/Step5Form";
+import Step5Form from "@/features/auth/forms/Step5Form";
 
 export default function RegisterStep5Page() {
   return (

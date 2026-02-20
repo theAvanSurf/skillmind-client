@@ -3,7 +3,7 @@
 import React, { useState } from "react"
 import { Check } from "lucide-react"
 import { useRouter } from "next/navigation"
-import AuthLayout from "./AuthLayout"
+import AuthLayout from "../components/AuthLayout"
 import type { PlanSelection } from "@/types/billing.types"
 
 const freePlanFeatures = [
@@ -56,16 +56,16 @@ export default function PlanSelectionStep() {
           onClick={() => setSelectedPlan("free")}
           className={`rounded-xl border-2 p-5 text-left transition-all ${
             selectedPlan === "free"
-              ? "border-orange-500/60 bg-orange-500/8"
+              ? "border-blue-500/60 bg-blue-500/8"
               : "border-white/10 bg-white/3 hover:border-white/20 hover:bg-white/6"
           }`}
         >
           <div className="mb-1 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-orange-400">Free</h3>
+            <h3 className="text-base font-semibold text-blue-400">Free</h3>
             <div
               className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all ${
                 selectedPlan === "free"
-                  ? "border-orange-500 bg-orange-500"
+                  ? "border-blue-500 bg-blue-500"
                   : "border-white/30"
               }`}
             >
@@ -81,7 +81,7 @@ export default function PlanSelectionStep() {
           <ul className="space-y-2">
             {freePlanFeatures.map((f) => (
               <li key={f} className="flex items-start gap-2">
-                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-400/60" />
+                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-400/60" />
                 <span className="text-xs text-white/55">{f}</span>
               </li>
             ))}
@@ -94,21 +94,21 @@ export default function PlanSelectionStep() {
           onClick={() => setSelectedPlan("premium")}
           className={`relative rounded-xl border-2 p-5 text-left transition-all ${
             selectedPlan === "premium"
-              ? "border-orange-500/60 bg-orange-500/8"
+              ? "border-blue-500/60 bg-blue-500/8"
               : "border-white/10 bg-white/3 hover:border-white/20 hover:bg-white/6"
           }`}
         >
           <div className="absolute -top-2.5 left-4">
-            <span className="rounded-full bg-linear-to-r from-orange-500 to-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg shadow-orange-500/30">
+            <span className="rounded-full bg-linear-to-r from-blue-500 to-sky-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white shadow-lg shadow-blue-500/30">
               Popular
             </span>
           </div>
           <div className="mb-1 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-orange-400">Premium</h3>
+            <h3 className="text-base font-semibold text-blue-400">Premium</h3>
             <div
               className={`flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all ${
                 selectedPlan === "premium"
-                  ? "border-orange-500 bg-orange-500"
+                  ? "border-blue-500 bg-blue-500"
                   : "border-white/30"
               }`}
             >
@@ -124,7 +124,7 @@ export default function PlanSelectionStep() {
           <ul className="space-y-2">
             {premiumPlanFeatures.map((f) => (
               <li key={f} className="flex items-start gap-2">
-                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-orange-400" />
+                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-400" />
                 <span className="text-xs text-white/55">{f}</span>
               </li>
             ))}
@@ -137,7 +137,7 @@ export default function PlanSelectionStep() {
         onClick={handleContinue}
         className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
           selectedPlan
-            ? "bg-linear-to-r from-orange-500 to-orange-600 shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700"
+            ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
             : "cursor-not-allowed bg-white/10 text-white/30"
         }`}
       >

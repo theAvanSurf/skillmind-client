@@ -40,12 +40,12 @@ export default function CoursePromo({
       text: 'text-green-400',
     },
     purple: {
-      bgLight: 'bg-purple-500/10',
-      text: 'text-purple-400',
+      bgLight: 'bg-indigo-500/10',
+      text: 'text-indigo-400',
     },
     orange: {
-      bgLight: 'bg-orange-500/10',
-      text: 'text-orange-400',
+      bgLight: 'bg-blue-500/10',
+      text: 'text-blue-400',
     },
     indigo: {
       bgLight: 'bg-indigo-500/10',
@@ -83,7 +83,7 @@ export default function CoursePromo({
             {primaryAction && (
               <Link
                 href={primaryAction.href ?? '#'}
-                className="rounded-xl bg-linear-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-orange-500/20 transition hover:from-orange-600 hover:to-orange-700"
+                className="rounded-xl bg-linear-to-r from-blue-500 to-blue-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-blue-500/20 transition hover:from-blue-600 hover:to-blue-700"
               >
                 {primaryAction.text}
               </Link>

@@ -130,7 +130,7 @@ export default function PaymentForm({
               name="firstName"
               value={personalInfo.firstName}
               onChange={handlePersonalInfoChange}
-              className="w-full rounded-xl border border-white/10 bg-white/6 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition focus:border-orange-500/50 focus:bg-white/9 focus:ring-2 focus:ring-orange-500/15"
+              className="w-full rounded-xl border border-white/10 bg-white/6 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition focus:border-blue-500/50 focus:bg-white/9 focus:ring-2 focus:ring-blue-500/15"
               placeholder="First Name *"
               required
             />
@@ -139,7 +139,7 @@ export default function PaymentForm({
               name="lastName"
               value={personalInfo.lastName}
               onChange={handlePersonalInfoChange}
-              className="w-full rounded-xl border border-white/10 bg-white/6 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition focus:border-orange-500/50 focus:bg-white/9 focus:ring-2 focus:ring-orange-500/15"
+              className="w-full rounded-xl border border-white/10 bg-white/6 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition focus:border-blue-500/50 focus:bg-white/9 focus:ring-2 focus:ring-blue-500/15"
               placeholder="Last Name *"
               required
             />
@@ -149,7 +149,7 @@ export default function PaymentForm({
             name="email"
             value={personalInfo.email}
             onChange={handlePersonalInfoChange}
-            className="mt-2 w-full rounded-xl border border-white/10 bg-white/6 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition focus:border-orange-500/50 focus:bg-white/9 focus:ring-2 focus:ring-orange-500/15"
+            className="mt-2 w-full rounded-xl border border-white/10 bg-white/6 px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none transition focus:border-blue-500/50 focus:bg-white/9 focus:ring-2 focus:ring-blue-500/15"
             placeholder="Email Address *"
             required
           />
@@ -175,11 +175,11 @@ export default function PaymentForm({
         {/* Terms */}
         <p className="text-xs text-white/35">
           By subscribing you agree to our{" "}
-          <a href="/terms" className="text-orange-400 transition hover:text-orange-300">
+          <a href="/terms" className="text-blue-400 transition hover:text-blue-300">
             Terms
           </a>{" "}
           and{" "}
-          <a href="/privacy" className="text-orange-400 transition hover:text-orange-300">
+          <a href="/privacy" className="text-blue-400 transition hover:text-blue-300">
             Privacy Policy
           </a>
           .
@@ -198,7 +198,7 @@ export default function PaymentForm({
           <button
             type="submit"
             disabled={!stripe || loading}
-            className="flex-1 rounded-xl bg-linear-to-r from-orange-500 to-orange-600 py-3 text-sm font-semibold text-white shadow-lg shadow-orange-500/25 transition-all hover:from-orange-600 hover:to-orange-700 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex-1 rounded-xl bg-linear-to-r from-blue-500 to-blue-600 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/25 transition-all hover:from-blue-600 hover:to-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">

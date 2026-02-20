@@ -35,7 +35,7 @@ const CourseStats = ({
 }: CourseStatsProps) => {
   return (
     <div
-      className={`relative w-full overflow-hidden rounded-2xl bg-linear-to-br from-orange-500 to-orange-600 p-6 shadow-lg shadow-orange-500/20 ${className}`}
+      className={`relative w-full overflow-hidden rounded-2xl bg-linear-to-br from-blue-500 to-blue-600 p-6 shadow-lg shadow-blue-500/20 ${className}`}
     >
       {/* Subtle background pattern */}
       <div className="pointer-events-none absolute inset-0 rounded-2xl">

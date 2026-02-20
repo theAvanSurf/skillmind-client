@@ -19,7 +19,7 @@ export default function Recommendations({ title, subtitle, courses }: Recommenda
           <h2 className="text-xl font-semibold text-white">{title}</h2>
           {subtitle && <p className="mt-0.5 text-sm text-white/40">{subtitle}</p>}
         </div>
-        <span className="cursor-pointer text-sm font-medium text-orange-600 transition hover:text-orange-700">
+        <span className="cursor-pointer text-sm font-medium text-blue-600 transition hover:text-blue-700">
           View all
         </span>
       </div>
@@ -38,7 +38,7 @@ export default function Recommendations({ title, subtitle, courses }: Recommenda
               }
             }}
           >
-            <div className="relative flex h-40 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-purple-500/10 to-indigo-500/5">
+            <div className="relative flex h-40 w-full items-center justify-center overflow-hidden bg-gradient-to-br from-indigo-500/10 to-indigo-500/5">
                <div className="absolute left-3 top-3 rounded-full border border-white/10 bg-white/[0.08] px-2.5 py-0.5 text-[11px] font-medium text-white/70 backdrop-blur-sm">
                 {course.category}
               </div>
@@ -55,7 +55,7 @@ export default function Recommendations({ title, subtitle, courses }: Recommenda
                 <Clock className="h-3.5 w-3.5" />
                 <span>{course.duration}</span>
               </div>
-              <button className="w-full rounded-xl bg-linear-to-r from-orange-500 to-orange-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm shadow-orange-500/20 transition hover:from-orange-600 hover:to-orange-700">
+              <button className="w-full rounded-xl bg-linear-to-r from-blue-500 to-blue-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm shadow-blue-500/20 transition hover:from-blue-600 hover:to-blue-700">
                 Start course
               </button>
             </div>

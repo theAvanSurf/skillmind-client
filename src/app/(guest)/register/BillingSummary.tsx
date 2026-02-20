@@ -56,7 +56,7 @@ export default function BillingSummary({
                 Billed {billingInfo.plan.interval === "month" ? "monthly" : "yearly"}
               </p>
             </div>
-            <span className="text-base font-bold text-orange-400">
+            <span className="text-base font-bold text-blue-400">
               ${billingInfo.plan.price.toFixed(2)}
             </span>
           </div>
@@ -68,7 +68,7 @@ export default function BillingSummary({
         {!showPromoInput ? (
           <button
             onClick={() => setShowPromoInput(true)}
-            className="text-xs font-medium text-orange-400 transition hover:text-orange-300"
+            className="text-xs font-medium text-blue-400 transition hover:text-blue-300"
           >
             + Add promo code
           </button>
@@ -80,11 +80,11 @@ export default function BillingSummary({
                 value={promoCode}
                 onChange={(e) => setPromoCode(e.target.value)}
                 placeholder="Enter code"
-                className="flex-1 rounded-lg border border-white/10 bg-white/6 px-3 py-2 text-xs text-white placeholder-white/25 outline-none transition focus:border-orange-500/50 focus:ring-1 focus:ring-orange-500/20"
+                className="flex-1 rounded-lg border border-white/10 bg-white/6 px-3 py-2 text-xs text-white placeholder-white/25 outline-none transition focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20"
               />
               <button
                 onClick={handleApplyPromo}
-                className="rounded-lg bg-orange-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-orange-600"
+                className="rounded-lg bg-blue-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-blue-600"
               >
                 Apply
               </button>
@@ -125,7 +125,7 @@ export default function BillingSummary({
       <div className="flex items-baseline justify-between">
         <span className="text-sm font-semibold text-white">Total due today</span>
         <div className="text-right">
-          <div className="bg-linear-to-r from-orange-400 to-amber-300 bg-clip-text text-xl font-bold text-transparent">
+          <div className="bg-linear-to-r from-blue-400 to-sky-300 bg-clip-text text-xl font-bold text-transparent">
             ${billingInfo.total.toFixed(2)}
           </div>
           <div className="text-xs text-white/35">
@@ -135,9 +135,9 @@ export default function BillingSummary({
       </div>
 
       {/* Trial info */}
-      <div className="rounded-xl border border-orange-500/15 bg-orange-500/8 p-3">
+      <div className="rounded-xl border border-blue-500/15 bg-blue-500/8 p-3">
         <p className="text-xs text-white/70">
-          <span className="font-semibold text-orange-300">7-day free trial included.</span>{" "}
+          <span className="font-semibold text-blue-300">7-day free trial included.</span>{" "}
           You won&apos;t be charged until{" "}
           {new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString()}.
         </p>

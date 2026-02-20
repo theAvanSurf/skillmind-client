@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation"
 import PhoneInput, { isValidPhoneNumber, getCountries } from "react-phone-number-input"
 import en from "react-phone-number-input/locale/en.json"
 import "react-phone-number-input/style.css"
-import AuthLayout from "./AuthLayout"
+import AuthLayout from "../components/AuthLayout"
 
 const today = new Date()
 const maxBirthDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate())
@@ -48,7 +48,7 @@ const field = (error?: boolean) =>
   `w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition bg-white/[0.06] focus:bg-white/[0.09] focus:ring-2 ${
     error
       ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/15"
-      : "border-white/10 focus:border-orange-500/50 focus:ring-orange-500/15"
+      : "border-white/10 focus:border-blue-500/50 focus:ring-blue-500/15"
   }`
 
 const FieldError = ({ msg }: { msg?: string }) =>
@@ -149,7 +149,7 @@ export default function PersonalInfoStep() {
           disabled={!isValid}
           className={`mt-2 w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
             isValid
-              ? "bg-linear-to-r from-orange-500 to-orange-600 shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700"
+              ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
               : "cursor-not-allowed bg-white/10 text-white/30"
           }`}
         >

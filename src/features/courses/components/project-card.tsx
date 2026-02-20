@@ -24,7 +24,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
 
   return (
     <div
-      className="group cursor-pointer rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 backdrop-blur-sm transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.07]"
+      className="group cursor-pointer rounded-xl border border-white/8 bg-white/4 p-4 backdrop-blur-sm transition-all duration-300 hover:border-white/[0.14] hover:bg-white/[0.07]"
       onClick={onClick}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}

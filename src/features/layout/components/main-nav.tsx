@@ -20,16 +20,16 @@ const MainNav: React.FC<MainNavProps> = ({
   userAvatar = null,
 }) => {
   return (
-    <nav className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#07071a]/95 shadow-lg shadow-black/20 backdrop-blur-sm">
+    <nav className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0a0a0f]/95 shadow-lg shadow-black/20 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-8 px-6 md:px-4">
         {/* Logo */}
         <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
           <div className="relative">
-            <Brain className="h-6 w-6 text-orange-500" />
-            <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-purple-500" />
+            <Brain className="h-6 w-6 text-blue-500" />
+            <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-indigo-500" />
           </div>
           <span className="text-lg font-semibold tracking-tight">
-            <span className="text-orange-500">Skill</span>
+            <span className="text-blue-500">Skill</span>
             <span className="text-white">Mind</span>
           </span>
         </Link>
@@ -57,7 +57,7 @@ const MainNav: React.FC<MainNavProps> = ({
               className="h-9 w-9 rounded-full object-cover ring-2 ring-gray-100"
             />
           ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-orange-400 to-purple-500 text-sm font-semibold text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-indigo-500 text-sm font-semibold text-white shadow-sm">
               {userName.charAt(0).toUpperCase()}
             </div>
           )}

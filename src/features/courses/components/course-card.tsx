@@ -80,7 +80,7 @@ const CourseCard: React.FC<CourseCardProps> = ({
               className={`h-full rounded-full transition-all duration-500 ${
                 isComplete
                   ? "bg-linear-to-r from-green-400 to-green-500"
-                  : "bg-linear-to-r from-orange-400 to-orange-500"
+                  : "bg-linear-to-r from-blue-400 to-blue-500"
               }`}
               style={{ width: `${progress}%` }}
             />

@@ -1,8 +1,8 @@
 'use client'
-import CoursePromo from "@/components/shared/course-promo";
-import ContinueLearning from "@/components/shared/continue-learning";
-import Recommendations from "@/components/shared/recommendations";
-import Favorites from "@/components/shared/favorites";
+import CoursePromo from "@/features/dashboard/components/course-promo";
+import ContinueLearning from "@/features/dashboard/components/continue-learning";
+import Recommendations from "@/features/dashboard/components/recommendations";
+import Favorites from "@/features/dashboard/components/favorites";
 
 const continueData = [
   { id: 1, title: "Advanced React Patterns", duration: "45 mins" },
@@ -27,7 +27,7 @@ export default function MyCoursesPage() {
     <div className="space-y-10">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="space-y-1">
-          <p className="text-sm font-medium text-orange-400">Learning Hub</p>
+          <p className="text-sm font-medium text-blue-400">Learning Hub</p>
           <h1 className="text-3xl font-semibold text-white">My Courses</h1>
           <p className="text-sm text-white/40">
             Continue your learning journey with personalized recommendations

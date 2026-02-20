@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
-import AuthLayout from "./AuthLayout"
+import AuthLayout from "../components/AuthLayout"
 
 const schema = z
   .object({
@@ -28,7 +28,7 @@ type FormData = z.infer<typeof schema>
 
 const strengthLevels = [
   { score: 1, label: "Very weak", color: "bg-red-500", text: "text-red-400" },
-  { score: 2, label: "Weak", color: "bg-orange-500", text: "text-orange-400" },
+  { score: 2, label: "Weak", color: "bg-blue-500", text: "text-blue-400" },
   { score: 3, label: "Fair", color: "bg-yellow-500", text: "text-yellow-400" },
   { score: 4, label: "Good", color: "bg-blue-400", text: "text-blue-400" },
   { score: 5, label: "Strong", color: "bg-emerald-500", text: "text-emerald-400" },
@@ -49,7 +49,7 @@ const field = (error?: boolean) =>
   `w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition bg-white/[0.06] focus:bg-white/[0.09] focus:ring-2 ${
     error
       ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/15"
-      : "border-white/10 focus:border-orange-500/50 focus:ring-orange-500/15"
+      : "border-white/10 focus:border-blue-500/50 focus:ring-blue-500/15"
   }`
 
 export default function AccountInfoStep() {
@@ -159,7 +159,7 @@ export default function AccountInfoStep() {
           disabled={!isValid}
           className={`mt-2 w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
             isValid
-              ? "bg-linear-to-r from-orange-500 to-orange-600 shadow-lg shadow-orange-500/25 hover:from-orange-600 hover:to-orange-700"
+              ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
               : "cursor-not-allowed bg-white/10 text-white/30"
           }`}
         >
