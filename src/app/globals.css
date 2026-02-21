@@ -1,30 +1,15 @@
 @import "tailwindcss";
 
-:root {
-  /* Brand */
-  --brand-orange: #3b82f6;
-  --brand-orange-dark: #ea580c;
-  --brand-purple: #7c3aed;
 
-  /* Auth dark theme */
-  --auth-bg: #0a0a0f;
-  --auth-card: rgba(255, 255, 255, 0.04);
-  --auth-border: rgba(255, 255, 255, 0.08);
-  --auth-input: rgba(255, 255, 255, 0.06);
-
-  /* Dashboard light theme */
-  --dash-bg: #f7f9fc;
-  --dash-card: #ffffff;
-  --dash-border: #e8ecf2;
-
-  --background: #ffffff;
-  --foreground: #171717;
-}
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-poppins);
+}
+
+html {
+  background-color: #181823;
 }
 
 body {
@@ -117,4 +102,17 @@ body {
 }
 .animate-shake {
   animation: shake 0.55s ease-in-out;
+}
+
+/* Hide scrollbars on horizontal scroll rails */
+html, body {
+  overflow-x: hidden;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
 }
