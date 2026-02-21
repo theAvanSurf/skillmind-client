@@ -118,3 +118,16 @@ body {
 .animate-shake {
   animation: shake 0.55s ease-in-out;
 }
+
+/* Hide scrollbars on horizontal scroll rails */
+html, body {
+  overflow-x: hidden;
+}
+
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

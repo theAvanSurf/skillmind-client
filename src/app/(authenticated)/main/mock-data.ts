@@ -1,6 +1,6 @@
 import type { CourseStatItem } from "@/types/course.types";
 
-export const statItems: Omit<CourseStatItem, "icon">[] = [
+export const statItems: CourseStatItem[] = [
   { label: "Active Courses", value: 5 },
   { label: "Average Progress", value: "68%" },
   { label: "Daily Streak", value: 6 },
@@ -21,34 +21,34 @@ export const inProgressCourses = [
     image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
     progress: 42,
     duration: "8h 10m",
-    lessons: 24,
-    category: "Languages",
+    lessons: 21,
+    category: "Backend",
   },
   {
-    title: "Node.js & REST APIs",
-    image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80",
-    progress: 21,
-    duration: "10h 45m",
-    lessons: 28,
-    category: "Backend",
+    title: "UI/UX for Developers",
+    image: "https://images.unsplash.com/photo-1523475472560-d2df97ec485c?auto=format&fit=crop&w=1200&q=80",
+    progress: 78,
+    duration: "6h 45m",
+    lessons: 18,
+    category: "Design",
   },
 ];
 
 export const completedCourses = [
   {
-    title: "HTML & CSS Fundamentals",
-    image: "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?auto=format&fit=crop&w=1200&q=80",
+    title: "JavaScript Mastery",
+    image: "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&w=1200&q=80",
     progress: 100,
-    duration: "6h 20m",
-    lessons: 18,
-    category: "Web",
+    duration: "10h 00m",
+    lessons: 28,
+    category: "Frontend",
   },
   {
-    title: "JavaScript Basics",
-    image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80",
+    title: "API Design with Node",
+    image: "https://images.unsplash.com/photo-1483478550801-ceba5fe50e8e?auto=format&fit=crop&w=1200&q=80",
     progress: 100,
-    duration: "9h 05m",
-    lessons: 26,
-    category: "Languages",
+    duration: "7h 20m",
+    lessons: 16,
+    category: "Backend",
   },
 ];

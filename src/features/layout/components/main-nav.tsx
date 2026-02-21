@@ -1,73 +1,217 @@
-import React from "react";
-import Link from "next/link";
-import { Brain } from "lucide-react";
+"use client"
+
+import { useEffect, useRef, useState } from "react"
+import Link from "next/link"
+import { Brain, Menu, X } from "lucide-react"
 
 interface MainNavProps {
-  userName?: string;
-  userAvatar?: string | null;
+  userName?: string
+  userAvatar?: string | null
 }
 
 const navLinks = [
-  { label: "Home", href: "/dashboard" },
+  { label: "Home", href: "/main" },
   { label: "My Courses", href: "/my-courses" },
   { label: "Courses", href: "/courses" },
   { label: "Resources", href: "/resources" },
   { label: "Community", href: "/community" },
-];
+]
 
-const MainNav: React.FC<MainNavProps> = ({
+export default function MainNav({
   userName = "Sabrina",
   userAvatar = null,
-}) => {
-  return (
-    <nav className="sticky top-0 z-50 border-b border-white/[0.08] bg-[#0a0a0f]/95 shadow-lg shadow-black/20 backdrop-blur-sm">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-8 px-6 md:px-4">
-        {/* Logo */}
-        <Link href="/dashboard" className="flex shrink-0 items-center gap-2">
-          <div className="relative">
-            <Brain className="h-6 w-6 text-blue-500" />
-            <div className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-indigo-500" />
-          </div>
-          <span className="text-lg font-semibold tracking-tight">
-            <span className="text-blue-500">Skill</span>
-            <span className="text-white">Mind</span>
-          </span>
-        </Link>
+}: MainNavProps) {
+  const [scrolled, setScrolled] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const initial = userName.charAt(0).toUpperCase()
+  const mounted = useRef(false)
 
-        {/* Navigation links */}
-        <ul className="hidden flex-1 items-center justify-center gap-1 md:flex">
-          {navLinks.map((link) => (
-            <li key={link.href}>
+  useEffect(() => {
+    mounted.current = true
+    const handler = () => {
+      setScrolled(window.scrollY > 72)
+      // close mobile menu on scroll
+      if (window.scrollY > 10) setMenuOpen(false)
+    }
+    window.addEventListener("scroll", handler, { passive: true })
+    handler()
+    return () => window.removeEventListener("scroll", handler)
+  }, [])
+
+  const ease = "cubic-bezier(0.32, 0.72, 0, 1)"
+  const dur = "0.55s"
+  const transition = mounted.current ? `all ${dur} ${ease}` : "none"
+
+  return (
+    <>
+      {/* Spacer */}
+      <div className="h-16" />
+
+      {/* Fixed outer shell — pill morphs here, overflow:hidden clips to pill shape */}
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-50 flex justify-center"
+        style={{ padding: scrolled ? "0 16px" : "0" }}
+      >
+        <div
+          className="pointer-events-auto w-full overflow-hidden backdrop-blur-xl"
+          style={{
+            transition,
+            willChange: "max-width, border-radius, margin-top, background-color, box-shadow",
+            maxWidth: scrolled ? "720px" : "100vw",
+            borderRadius: scrolled ? "9999px" : "0px",
+            marginTop: scrolled ? "10px" : "0px",
+            backgroundColor: scrolled ? "rgba(6,6,10,0.88)" : "rgba(28,28,34,0.60)",
+            boxShadow: scrolled
+              ? "0 8px 40px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.09)"
+              : "0 1px 0 0 rgba(255,255,255,0.06)",
+          }}
+        >
+          {/* ── Main bar ── */}
+          <div
+            className="flex items-center justify-between"
+            style={{
+              transition,
+              height: scrolled ? "42px" : "64px",
+              paddingLeft: scrolled ? "14px" : "24px",
+              paddingRight: scrolled ? "14px" : "24px",
+            }}
+          >
+            {/* Logo */}
+            <Link href="/main" className="flex shrink-0 items-center gap-1.5" onClick={() => setMenuOpen(false)}>
+              <div
+                className="relative flex items-center justify-center"
+                style={{ transition, width: scrolled ? "18px" : "24px", height: scrolled ? "18px" : "24px" }}
+              >
+                <Brain className="h-full w-full text-blue-500" />
+                <div
+                  className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-indigo-500"
+                  style={{ transition, opacity: scrolled ? 0 : 1 }}
+                />
+              </div>
+              <span
+                className="font-semibold leading-none tracking-tight"
+                style={{ transition, fontSize: scrolled ? "13px" : "17px" }}
+              >
+                <span className="text-blue-500">Skill</span>
+                <span className="text-white">Mind</span>
+              </span>
+            </Link>
+
+            {/* Desktop nav links */}
+            <ul className="hidden items-center sm:flex" style={{ transition, gap: scrolled ? "2px" : "4px" }}>
+              {navLinks.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className="block font-medium text-white/50 hover:text-white/90"
+                    style={{ transition, fontSize: scrolled ? "11px" : "14px" }}
+                  >
+                    <span
+                      className="block hover:bg-white/7"
+                      style={{
+                        transition,
+                        paddingLeft: scrolled ? "8px" : "14px",
+                        paddingRight: scrolled ? "8px" : "14px",
+                        paddingTop: scrolled ? "4px" : "8px",
+                        paddingBottom: scrolled ? "4px" : "8px",
+                        borderRadius: scrolled ? "9999px" : "8px",
+                      }}
+                    >
+                      {link.label}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {/* Right: avatar + hamburger */}
+            <div className="flex shrink-0 items-center gap-2">
+              <div
+                className="overflow-hidden rounded-full bg-linear-to-br from-blue-400 to-indigo-500 shadow-sm"
+                style={{ transition, width: scrolled ? "28px" : "36px", height: scrolled ? "28px" : "36px" }}
+              >
+                {userAvatar ? (
+                  <img src={userAvatar} alt={userName} className="h-full w-full object-cover" />
+                ) : (
+                  <div
+                    className="flex h-full w-full items-center justify-center font-bold text-white"
+                    style={{ transition, fontSize: scrolled ? "10px" : "13px" }}
+                  >
+                    {initial}
+                  </div>
+                )}
+              </div>
+              <span
+                className="hidden overflow-hidden whitespace-nowrap text-sm font-medium text-white/60 sm:block"
+                style={{ transition, opacity: scrolled ? 0 : 1, maxWidth: scrolled ? "0px" : "120px" }}
+              >
+                {userName}
+              </span>
+              {/* Hamburger — mobile only */}
+              <button
+                className="flex h-8 w-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white sm:hidden"
+                onClick={() => setMenuOpen((o) => !o)}
+                aria-label="Toggle menu"
+              >
+                {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/*
+        Mobile drawer — rendered OUTSIDE the pill so it's never clipped by
+        overflow:hidden + border-radius:9999px. Sits at z-49, below the nav (z-50).
+        Slides down from the top using translateY.
+      */}
+      <div
+        className="pointer-events-none fixed inset-x-0 top-0 z-40 sm:hidden"
+        style={{
+          // Push the panel down by the nav bar height so it appears right below it
+          paddingTop: scrolled ? "62px" : "64px",
+          transition: `padding-top ${dur} ${ease}`,
+        }}
+      >
+        <div
+          className="pointer-events-auto overflow-hidden bg-[rgba(6,6,10,0.96)] backdrop-blur-2xl"
+          style={{
+            transition: `transform 0.38s ${ease}, opacity 0.28s ease`,
+            transform: menuOpen ? "translateY(0)" : "translateY(-110%)",
+            opacity: menuOpen ? 1 : 0,
+            boxShadow: "0 12px 40px rgba(0,0,0,0.7)",
+          }}
+        >
+          <div className="px-4 pb-5 pt-3">
+            {navLinks.map((link) => (
               <Link
+                key={link.href}
                 href={link.href}
-                className="rounded-lg px-3.5 py-2 text-sm font-medium text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white/90"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center rounded-xl px-3 py-3.5 text-[15px] font-medium text-white/60 transition hover:bg-white/8 hover:text-white"
               >
                 {link.label}
               </Link>
-            </li>
-          ))}
-        </ul>
-
-        {/* User profile */}
-        <div className="flex shrink-0 items-center gap-2.5">
-          {userAvatar ? (
-            <img
-              src={userAvatar}
-              alt={userName}
-              className="h-9 w-9 rounded-full object-cover ring-2 ring-gray-100"
-            />
-          ) : (
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-indigo-500 text-sm font-semibold text-white shadow-sm">
-              {userName.charAt(0).toUpperCase()}
+            ))}
+            <div className="mt-3 border-t border-white/8 pt-3">
+              <div className="flex items-center gap-3 px-3 py-2">
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-indigo-500 text-xs font-bold text-white">
+                  {initial}
+                </div>
+                <span className="text-sm font-medium text-white/60">{userName}</span>
+              </div>
             </div>
-          )}
-          <span className="hidden text-sm font-medium text-white/60 md:block">
-            {userName}
-          </span>
+          </div>
         </div>
       </div>
-    </nav>
-  );
-};
 
-export default MainNav;
+      {/* Backdrop tap-to-close */}
+      {menuOpen && (
+        <div
+          className="fixed inset-0 z-30 sm:hidden"
+          onClick={() => setMenuOpen(false)}
+        />
+      )}
+    </>
+  )
+}
