@@ -48,12 +48,12 @@ export const heroSlides = [
 
 // ─── Categories ───────────────────────────────────────────────────────────────
 export const categories = [
-  { id: "c1", label: "Web Dev",     icon: "🌐", count: 142, color: "from-blue-600 to-blue-700" },
-  { id: "c2", label: "AI & ML",     icon: "🤖", count: 89,  color: "from-indigo-600 to-indigo-700" },
-  { id: "c3", label: "Mobile",      icon: "📱", count: 67,  color: "from-sky-600 to-sky-700" },
-  { id: "c4", label: "Design",      icon: "🎨", count: 53,  color: "from-blue-500 to-cyan-600" },
-  { id: "c5", label: "DevOps",      icon: "⚙️", count: 44,  color: "from-indigo-500 to-blue-600" },
-  { id: "c6", label: "Security",    icon: "🔒", count: 38,  color: "from-blue-700 to-indigo-800" },
+  { id: "c1", label: "Web Dev",   icon: "🌐", count: 142, color: "from-blue-600 to-blue-800",    image: "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?auto=format&fit=crop&w=800&q=80" },
+  { id: "c2", label: "AI & ML",   icon: "🤖", count: 89,  color: "from-indigo-600 to-violet-800", image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80" },
+  { id: "c3", label: "Mobile",    icon: "📱", count: 67,  color: "from-sky-500 to-cyan-700",     image: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?auto=format&fit=crop&w=800&q=80" },
+  { id: "c4", label: "Design",    icon: "🎨", count: 53,  color: "from-pink-500 to-rose-700",    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?auto=format&fit=crop&w=800&q=80" },
+  { id: "c5", label: "DevOps",    icon: "⚙️", count: 44,  color: "from-emerald-500 to-teal-700", image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=800&q=80" },
+  { id: "c6", label: "Security",  icon: "🔒", count: 38,  color: "from-amber-500 to-orange-700",  image: "https://images.unsplash.com/photo-1614064641938-3bbee52942c7?auto=format&fit=crop&w=800&q=80" },
 ];
 
 // ─── Continue Watching cards (rectangular) ────────────────────────────────────

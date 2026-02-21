@@ -20,7 +20,7 @@ export default function MainPage() {
       <div className="w-screen" style={{ marginLeft: "calc(50% - 50vw)" }}>
         <HeroBanner slides={heroSlides} />
       </div>
-      <div className="mx-auto max-w-screen-xl space-y-8 px-4 py-8 sm:px-6 sm:space-y-10 sm:py-10">
+      <div className="mx-auto max-w-360 space-y-8 px-4 py-8 sm:px-6 lg:px-10 sm:space-y-10 sm:py-10">
         <CategoryCards categories={categories} />
         <ContinueWatching courses={continueWatching} />
         <BecauseYouWatched data={becauseYouWatched} />
