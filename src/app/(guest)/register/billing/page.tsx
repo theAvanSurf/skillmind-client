@@ -7,6 +7,7 @@ import PaymentForm from "@/app/(guest)/register/PaymentForm"
 import BillingSummary from "@/app/(guest)/register/BillingSummary"
 import AuthLayout from "@/features/auth/components/AuthLayout"
 import { stripePromise } from "@/lib/stripe"
+import { sileo } from "sileo"
 import type { PlanType, BillingInfo } from "@/types/billing.types"
 
 const premiumPlan: PlanType = {
@@ -45,7 +46,7 @@ function BillingPageInner() {
   const searchParams = useSearchParams()
   // We can retrieve email from query if passed, otherwise default or ask user
   // For now let's assume we don't have it and the PaymentForm will handle collecting details for Stripe.
-  
+
   const [clientSecret, setClientSecret] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(true)
@@ -62,21 +63,27 @@ function BillingPageInner() {
     // Create Payment Intent on mount
     const createIntent = async () => {
       try {
-        const response = await fetch("/api/create-payment-intent", {
+        const promise = fetch("/api/create-payment-intent", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            // We might need to pass partial user info if we had it
-            email: "user@example.com", // Placeholder, ideally should come from Step 2
+            email: "user@example.com",
             amount: Math.round(billingInfo.total * 100),
           }),
-        })
+        }).then(async (res) => {
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Failed to initialize payment");
+          return data;
+        });
 
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || "Error creating payment intent")
-        }
+        const data = await sileo.promise(promise, {
+          loading: { title: "Initializing payment...", description: "Setting up secure checkout" },
+          success: { title: "Ready to pay", description: "Payment intent created successfully" },
+          error: (err: any) => ({
+            title: "Payment Error",
+            description: err.message || "Failed to initialize payment flow"
+          })
+        });
 
         setClientSecret(data.clientSecret)
       } catch (err) {
@@ -91,7 +98,7 @@ function BillingPageInner() {
   }, []) // eslint-disable-line
 
   const handleApplyPromo = (code: string) => {
-     if (code === "SAVE10") {
+    if (code === "SAVE10") {
       const discount = billingInfo.subtotal * 0.1;
       const newTotal = billingInfo.subtotal - discount + billingInfo.tax;
       setBillingInfo((prev) => ({
@@ -99,7 +106,7 @@ function BillingPageInner() {
         discount,
         total: newTotal,
       }));
-     }
+    }
   }
 
   const handleSuccess = () => {
@@ -125,7 +132,7 @@ function BillingPageInner() {
       <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
         <div className="text-center py-10">
           <p className="text-red-500 mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="text-indigo-700 underline"
           >

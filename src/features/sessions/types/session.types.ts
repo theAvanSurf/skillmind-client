@@ -1,8 +1,8 @@
-export type { Profile } from "@/types/profile.types";
-export { ProfileTypes } from "@/types/profile.types";
+export type { Profile } from "@/features/profiles/types/profile.types";
+export { ProfileTypes } from "@/features/profiles/types/profile.types";
 export type { Device } from "@/types/session.types";
 
-import { Profile } from "@/types/profile.types";
+import { Profile } from "@/features/profiles/types/profile.types";
 import { Device } from "@/types/session.types";
 
 export interface SessionResponse {

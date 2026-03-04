@@ -50,7 +50,6 @@ httpClient.interceptors.response.use(
         return response.data;
     },
     (error: AxiosError<ErrorResponseData>) => {
-
         const message = error.response?.data
             ? extractMessage(error.response.data)
             : error.message ?? "Internal Server Error";

@@ -1,4 +1,4 @@
-import { Profile } from "./profile.types";
+import { Profile } from "../features/profiles/types/profile.types";
 
 export interface Device {
     deviceId: string;

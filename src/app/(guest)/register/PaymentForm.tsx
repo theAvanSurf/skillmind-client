@@ -6,6 +6,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import { sileo } from "sileo";
 
 // Importar tipos desde page.tsx
 export interface PlanType {
@@ -82,8 +83,7 @@ export default function PaymentForm({
     setError(null);
 
     try {
-      // Confirm payment with Stripe
-      const { error: stripeError } = await stripe.confirmPayment({
+      const confirmPromise = stripe.confirmPayment({
         elements,
         confirmParams: {
           return_url: returnUrl || `${window.location.origin}/subscription/success`,
@@ -96,18 +96,25 @@ export default function PaymentForm({
           },
         },
         redirect: "if_required",
+      }).then((result) => {
+        if (result.error) throw result.error;
+        return result;
       });
 
-      if (stripeError) {
-        setError(stripeError.message || "An error occurred");
-        setLoading(false);
-      } else {
-        // Payment successful
-        onSuccess();
-      }
+      await sileo.promise(confirmPromise, {
+        loading: { title: "Processing payment...", description: "Please don't close this window" },
+        success: { title: "Payment Successful!", description: "Subscription activated successfully" },
+        error: (err: any) => ({
+          title: "Payment Failed",
+          description: err.message || "An error occurred during payment"
+        })
+      });
+
+      onSuccess();
     } catch (err) {
       console.error("Payment error:", err);
       setError("An unexpected error occurred. Please try again.");
+    } finally {
       setLoading(false);
     }
   };

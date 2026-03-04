@@ -11,3 +11,12 @@ export interface Profile {
   profileType: ProfileTypes;
   kidsProfile: boolean;
 }
+
+export interface CreateProfileRequest {
+  ProfileName: string;
+  ProfilePhotoUrl: string;
+  ProfileType: ProfileTypes;
+  KidsProfile: boolean;
+}
+
+export interface UpdateProfileRequest extends CreateProfileRequest { }

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+:root {
+  --sileo-width: 420px;
+  --sileo-height: auto;
+  --sileo-duration: 700ms;
+}
+
 
 
 @theme inline {
