@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { Plus, Pencil, Check, Baby, ChevronLeft, Trash2, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import AuthLayout from "../components/AuthLayout"
-import type { Profile } from "@/types/profile.types"
+import type { Profile } from "@/features/profiles/types/profile.types"
 
 /* ─── Data ───────────────────────────────────────────── */
 const PRESET_AVATARS = [
@@ -172,7 +172,7 @@ export default function ProfilesStep() {
           ))}
           {profiles.length < MAX_PROFILES &&
             Array.from({ length: emptySlots }).map((_, i) => (
-              <EmptySlot key={`empty-${i}`} onClick={i === 0 ? openNew : () => {}} />
+              <EmptySlot key={`empty-${i}`} onClick={i === 0 ? openNew : () => { }} />
             ))}
         </div>
 
@@ -180,11 +180,10 @@ export default function ProfilesStep() {
           type="button"
           disabled={profiles.length === 0}
           onClick={() => router.push("/register/step4")}
-          className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
-            profiles.length > 0
+          className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${profiles.length > 0
               ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
               : "cursor-not-allowed bg-white/10 text-white/30"
-          }`}
+            }`}
         >
           Continue
         </button>
@@ -231,11 +230,10 @@ export default function ProfilesStep() {
               onChange={(e) => { setDraftName(e.target.value); setNameError("") }}
               onBlur={() => setNameError(validateName(draftName))}
               placeholder="e.g. Sabrina"
-              className={`w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition bg-white/6 focus:bg-white/9 focus:ring-2 ${
-                nameError
+              className={`w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition bg-white/6 focus:bg-white/9 focus:ring-2 ${nameError
                   ? "border-red-500/50 focus:border-red-500/50 focus:ring-red-500/15"
                   : "border-white/10 focus:border-blue-500/50 focus:ring-blue-500/15"
-              }`}
+                }`}
             />
             {nameError && <p className="mt-1 text-xs text-red-400">{nameError}</p>}
           </div>
@@ -254,16 +252,14 @@ export default function ProfilesStep() {
             <button
               type="button"
               onClick={() => setDraftKids((k) => !k)}
-              className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full border transition-all ${
-                draftKids
+              className={`relative mt-0.5 h-6 w-11 shrink-0 rounded-full border transition-all ${draftKids
                   ? "border-blue-500/50 bg-blue-500"
                   : "border-white/15 bg-white/10"
-              }`}
+                }`}
             >
               <span
-                className={`absolute top-0.5 block h-5 w-5 rounded-full bg-white shadow transition-transform ${
-                  draftKids ? "translate-x-5" : "translate-x-0.5"
-                }`}
+                className={`absolute top-0.5 block h-5 w-5 rounded-full bg-white shadow transition-transform ${draftKids ? "translate-x-5" : "translate-x-0.5"
+                  }`}
               />
             </button>
           </div>
@@ -296,11 +292,10 @@ export default function ProfilesStep() {
               key={url}
               type="button"
               onClick={() => setDraftAvatar(url)}
-              className={`relative overflow-hidden rounded-full border-2 transition-all ${
-                draftAvatar === url
+              className={`relative overflow-hidden rounded-full border-2 transition-all ${draftAvatar === url
                   ? "border-blue-500 shadow-md shadow-blue-500/30"
                   : "border-white/10 hover:border-white/30"
-              }`}
+                }`}
             >
               <img src={url} alt="" className="h-full w-full object-cover aspect-square" />
               {draftAvatar === url && (

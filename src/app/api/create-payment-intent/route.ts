@@ -1,36 +1,38 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+    apiVersion: "2025-02-24.acacia", // Use latest or appropriate version
+});
 
-export async function POST(req: NextRequest) {
-  try {
-    const { email, amount } = await req.json();
+export async function POST(request: Request) {
+    try {
+        const { amount, email } = await request.json();
 
-    if (!email || !amount) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+        if (!amount) {
+            return NextResponse.json(
+                { error: "Amount is required" },
+                { status: 400 }
+            );
+        }
+
+        const paymentIntent = await stripe.paymentIntents.create({
+            amount,
+            currency: "usd",
+            receipt_email: email,
+            automatic_payment_methods: {
+                enabled: true,
+            },
+        });
+
+        return NextResponse.json({
+            clientSecret: paymentIntent.client_secret,
+        });
+    } catch (err: any) {
+        console.error("Internal Error:", err);
+        return NextResponse.json(
+            { error: err.message || "Internal Server Error" },
+            { status: 500 }
+        );
     }
-
-    const customer = await stripe.customers.create({ email });
-
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: "usd",
-      customer: customer.id,
-      automatic_payment_methods: { enabled: true },
-    });
-
-    return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
-    });
-  } catch (err) {
-    console.error(err);
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Internal server error" },
-      { status: 500 }
-    );
-  }
 }
