@@ -9,6 +9,8 @@ import PhoneInput, { isValidPhoneNumber, getCountries } from "react-phone-number
 import en from "react-phone-number-input/locale/en.json"
 import "react-phone-number-input/style.css"
 import AuthLayout from "../components/AuthLayout"
+import { useRegistrationGuard } from "../hooks/useRegistrationGuard"
+import { createUserStorage } from "@/store/create-user-storage"
 
 const today = new Date()
 const maxBirthDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate())
@@ -44,6 +46,7 @@ type FormData = z.infer<typeof schema>
 const countries = getCountries()
 const countryNames = en as Record<string, string>
 
+
 const field = (error?: boolean) =>
   `w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition bg-white/[0.06] focus:bg-white/[0.09] focus:ring-2 ${
     error
@@ -56,6 +59,10 @@ const FieldError = ({ msg }: { msg?: string }) =>
 
 export default function PersonalInfoStep() {
   const router = useRouter()
+  const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
+  const setRegistrationDraft = createUserStorage((s) => s.setRegistrationDraft)
+  const draft = createUserStorage((s) => s.registrationDraft)
+  useRegistrationGuard(0, true)
   const {
     register,
     handleSubmit,
@@ -64,7 +71,16 @@ export default function PersonalInfoStep() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     mode: "onTouched",
+    defaultValues: {
+      firstName: draft.firstName ?? "",
+      lastName: draft.lastName ?? "",
+      birthDate: draft.birthDate ?? "",
+      phone: draft.phone ?? "",
+      country: draft.country ?? "",
+    },
   })
+
+  
 
   return (
     <AuthLayout step={1} totalSteps={5} title="Personal Information">
@@ -73,7 +89,11 @@ export default function PersonalInfoStep() {
         <p className="mt-1 text-xs text-white/40">Tell us about yourself to get started</p>
       </div>
 
-      <form onSubmit={handleSubmit(() => router.push("/register/step2"))} className="space-y-3" noValidate>
+      <form onSubmit={handleSubmit((data) => {
+        setRegistrationDraft({ firstName: data.firstName, lastName: data.lastName, birthDate: data.birthDate, phone: data.phone, country: data.country })
+        setCompletedStep(1)
+        router.push("/register/step2")
+      })} className="space-y-3" noValidate>
         {/* Name row */}
         <div className="grid grid-cols-2 gap-3">
           <div>

@@ -8,7 +8,12 @@ import BillingSummary from "@/app/(guest)/register/BillingSummary"
 import AuthLayout from "@/features/auth/components/AuthLayout"
 import { stripePromise } from "@/lib/stripe"
 import { sileo } from "sileo"
+import { useRegistrationGuard } from "@/features/auth/hooks/useRegistrationGuard"
+import { createUserStorage } from "@/store/create-user-storage"
+import AuthenticationServices from "@/features/auth/services/auth-services"
 import type { PlanType, BillingInfo } from "@/types/billing.types"
+
+const authServices = new AuthenticationServices()
 
 const premiumPlan: PlanType = {
   id: "premium",
@@ -30,7 +35,7 @@ const premiumPlan: PlanType = {
 export default function BillingPage() {
   return (
     <Suspense fallback={
-      <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
+      <AuthLayout step={3} totalSteps={5} title="Billing Information" wide>
         <div className="flex justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
@@ -44,8 +49,13 @@ export default function BillingPage() {
 function BillingPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  // We can retrieve email from query if passed, otherwise default or ask user
-  // For now let's assume we don't have it and the PaymentForm will handle collecting details for Stripe.
+  const allowed = useRegistrationGuard(3)
+  const draft = createUserStorage((s) => s.registrationDraft)
+  const setUserId = createUserStorage((s) => s.setUserId)
+  const setRegistrationDraft = createUserStorage((s) => s.setRegistrationDraft)
+  const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
+  const [signUpError, setSignUpError] = useState("")
+  const [signingUp, setSigningUp] = useState(false)
 
   const [clientSecret, setClientSecret] = useState("")
   const [error, setError] = useState("")
@@ -109,8 +119,33 @@ function BillingPageInner() {
     }
   }
 
-  const handleSuccess = () => {
-    router.push("/register/step5")
+  const handleSuccess = async () => {
+    setSigningUp(true)
+    setSignUpError("")
+    try {
+      const response = await authServices.signUp({
+        Name: draft.firstName ?? "",
+        LastName: draft.lastName ?? "",
+        UserName: draft.userName ?? "",
+        Email: draft.email ?? "",
+        Password: draft.password ?? "",
+        BirthDate: draft.birthDate ?? "",
+        PhoneNumber: draft.phone ?? "",
+        Country: draft.country ?? "",
+        AccountTypes: 1,
+        Role: 2,
+      })
+
+      if (!response.id) throw new Error("Registration failed. Please try again.")
+
+      setUserId(response.id)
+      setCompletedStep(3)
+      router.push("/register/step5")
+    } catch (err) {
+      setSignUpError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setSigningUp(false)
+    }
   }
 
   const handleBack = () => {
@@ -119,7 +154,7 @@ function BillingPageInner() {
 
   if (loading) {
     return (
-      <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
+      <AuthLayout step={3} totalSteps={5} title="Billing Information" wide>
         <div className="flex justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
         </div>
@@ -129,7 +164,7 @@ function BillingPageInner() {
 
   if (error) {
     return (
-      <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
+      <AuthLayout step={3} totalSteps={5} title="Billing Information" wide>
         <div className="text-center py-10">
           <p className="text-red-500 mb-4">{error}</p>
           <button
@@ -184,7 +219,17 @@ function BillingPageInner() {
   };
 
   return (
-    <AuthLayout step={4} totalSteps={5} title="Billing Information" subtitle="Secure Payment" wide>
+    <AuthLayout step={3} totalSteps={5} title="Billing Information" subtitle="Secure Payment" wide>
+      {signingUp && (
+        <div className="flex flex-col items-center gap-3 py-16">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500" />
+          <p className="text-sm text-white/50">Creating your account…</p>
+        </div>
+      )}
+      {!signingUp && signUpError && (
+        <p className="mb-4 rounded-xl border border-red-500/20 bg-red-500/8 px-4 py-3 text-sm text-red-400">{signUpError}</p>
+      )}
+      {!signingUp && (
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Payment Form — takes ~60% */}
         <div className="flex-1 min-w-0">
@@ -212,6 +257,7 @@ function BillingPageInner() {
           />
         </div>
       </div>
+      )}
     </AuthLayout>
   )
 }

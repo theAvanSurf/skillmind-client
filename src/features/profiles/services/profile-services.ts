@@ -3,10 +3,19 @@ import axios from "axios";
 
 export class ProfilesService {
 
-    async createProfile(request: CreateProfileRequest): Promise<Profile> {
-        const { data } = await axios.post<Profile>(
+    async createProfile(request: CreateProfileRequest): Promise<Profile[]> {
+        const { data } = await axios.post<Profile[]>(
             "/api/profiles",
-            request
+            [request]
+        );
+
+        return data;
+    }
+
+    async createProfiles(requests: CreateProfileRequest[]): Promise<Profile[]> {
+        const { data } = await axios.post<Profile[]>(
+            "/api/profiles",
+            requests
         );
 
         return data;

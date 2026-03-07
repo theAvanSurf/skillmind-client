@@ -1,6 +1,8 @@
 export const API_ENDPOINTS = {
     AUTH: {
-        LOGIN: '/auth/login'
+        LOGIN: '/auth/login',
+        SIGN_UP: '/auth/sign-up',
+        CONFIRM: '/auth/confirm',
     },
     SESSIONS: {
         GET_USER_SESSION: '/sessions'

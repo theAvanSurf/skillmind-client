@@ -36,11 +36,11 @@ export default function LoginForm() {
                 {/* Email */}
                 <div>
                     <label className="mb-1.5 block text-[11px] font-semibold uppercase tracking-widest text-white/50">
-                        Email
+                        Username
                     </label>
                     <input
-                        type="email"
-                        placeholder="you@example.com"
+                        type="text"
+                        placeholder="sabrina_carpenter"
                         value={userName}
                         onChange={(e) => setUserName(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && userName && password && handleLogin()}

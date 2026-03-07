@@ -5,10 +5,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
     try {
-        const body: CreateProfileRequest = await request.json();
-        const data = await httpClient.post<Profile>(
+        const body: CreateProfileRequest[] = await request.json();
+        const data = await httpClient.post<Profile[]>(
             API_ENDPOINTS.PROFILES.CREATE,
-            [body]
+            body
         );
 
         return NextResponse.json(data, { status: 201 });

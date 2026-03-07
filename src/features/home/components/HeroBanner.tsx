@@ -42,7 +42,7 @@ export default function HeroBanner({ slides }: HeroBannerProps) {
   }
 
   return (
-    <div className="relative h-[44vh] min-h-[300px] w-full overflow-hidden sm:h-[60vh] sm:min-h-[400px] lg:h-[68vh]">
+    <div className="relative h-[44vh] min-h-75 w-full overflow-hidden sm:h-[60vh] sm:min-h-100 lg:h-[68vh]">
       {/* Slides */}
       <AnimatePresence custom={direction} mode="sync">
         <motion.div

@@ -1,10 +1,15 @@
 "use client"
 
 import React, { useState } from "react"
-import { Check } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import AuthLayout from "../components/AuthLayout"
+import { useRegistrationGuard } from "../hooks/useRegistrationGuard"
+import { createUserStorage } from "@/store/create-user-storage"
+import AuthenticationServices from "@/features/auth/services/auth-services"
 import type { PlanSelection } from "@/types/billing.types"
+
+const authServices = new AuthenticationServices()
 
 const freePlanFeatures = [
   "Up to 5 user profiles",
@@ -30,18 +35,64 @@ const premiumPlanFeatures = [
 
 export default function PlanSelectionStep() {
   const router = useRouter()
-  const [selectedPlan, setSelectedPlan] = useState<PlanSelection>(null)
+  const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
+  const setRegistrationDraft = createUserStorage((s) => s.setRegistrationDraft)
+  const setUserId = createUserStorage((s) => s.setUserId)
+  const draft = createUserStorage((s) => s.registrationDraft)
+  const completedStep = createUserStorage((s) => s.completedStep)
+  const allowed = useRegistrationGuard(2)
+  const [selectedPlan, setSelectedPlan] = useState<PlanSelection>(draft.plan ?? null)
+  const [loading, setLoading] = useState(false)
+  const [apiError, setApiError] = useState("")
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
+    if (!selectedPlan) return
+    setRegistrationDraft({ plan: selectedPlan })
+    setApiError("")
+
     if (selectedPlan === "premium") {
+      // Sign-up happens after billing payment succeeds
+      setCompletedStep(3)
       router.push("/register/billing?plan=premium")
-    } else {
+      return
+    }
+
+    // If already signed up (backtracking), skip the API call
+    if (completedStep >= 3) {
       router.push("/register/step5")
+      return
+    }
+
+    // Free plan — create account now
+    setLoading(true)
+    try {
+      const response = await authServices.signUp({
+        Name: draft.firstName ?? "",
+        LastName: draft.lastName ?? "",
+        UserName: draft.userName ?? "",
+        Email: draft.email ?? "",
+        Password: draft.password ?? "",
+        BirthDate: draft.birthDate ?? "",
+        PhoneNumber: draft.phone ?? "",
+        Country: draft.country ?? "",
+        AccountTypes: 0,
+        Role: 2,
+      })
+
+      if (!response.id) throw new Error("Registration failed. Please try again.")
+
+      setUserId(response.id)
+      setCompletedStep(3)
+      router.push("/register/step5")
+    } catch (err) {
+      setApiError(err instanceof Error ? err.message : "Something went wrong")
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
-    <AuthLayout step={4} totalSteps={5} title="Choose Your Plan" wide>
+    <AuthLayout step={3} totalSteps={5} title="Choose Your Plan" wide>
       <div className="mb-5">
         <h2 className="text-xl font-bold text-white">Choose Your Plan</h2>
         <p className="mt-1 text-xs text-white/40">
@@ -132,17 +183,36 @@ export default function PlanSelectionStep() {
         </button>
       </div>
 
-      <button
-        disabled={!selectedPlan}
-        onClick={handleContinue}
-        className={`mt-6 w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
-          selectedPlan
-            ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
-            : "cursor-not-allowed bg-white/10 text-white/30"
-        }`}
-      >
-        Continue
-      </button>
+      {apiError && (
+        <p className="mt-3 text-center text-xs text-red-400">{apiError}</p>
+      )}
+
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <button
+          type="button"
+          onClick={() => router.push("/register/step2")}
+          className="rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/60 transition-all hover:border-white/20 hover:text-white/90"
+        >
+          Back
+        </button>
+        <button
+          disabled={!selectedPlan || loading}
+          onClick={handleContinue}
+          className={`rounded-xl py-3 text-sm font-semibold text-white transition-all ${
+            selectedPlan && !loading
+              ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
+              : "cursor-not-allowed bg-white/10 text-white/30"
+          }`}
+        >
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 size={14} className="animate-spin" /> Creating account…
+            </span>
+          ) : (
+            "Continue"
+          )}
+        </button>
+      </div>
     </AuthLayout>
   )
 }

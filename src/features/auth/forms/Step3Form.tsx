@@ -1,26 +1,14 @@
 "use client"
 
 import React, { useState } from "react"
-import { Plus, Pencil, Check, Baby, ChevronLeft, Trash2, User } from "lucide-react"
+import { Plus, Pencil, Check, Baby, ChevronLeft, Trash2, Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import AuthLayout from "../components/AuthLayout"
+import { useRegistrationGuard } from "../hooks/useRegistrationGuard"
+import { createUserStorage } from "@/store/create-user-storage"
 import type { Profile } from "@/features/profiles/types/profile.types"
-
-/* ─── Data ───────────────────────────────────────────── */
-const PRESET_AVATARS = [
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Aria&backgroundColor=b6e3f4",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Liam&backgroundColor=c0aede",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Zoe&backgroundColor=d1d4f9",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Max&backgroundColor=ffd5dc",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Luna&backgroundColor=ffdfbf",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Kai&backgroundColor=b6e3f4",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Nova&backgroundColor=c0aede",
-  "https://api.dicebear.com/9.x/adventurer/svg?seed=Rex&backgroundColor=d1d4f9",
-  "https://api.dicebear.com/9.x/bottts/svg?seed=SkillBot&backgroundColor=1a1a2e",
-  "https://api.dicebear.com/9.x/bottts/svg?seed=Draco&backgroundColor=16213e",
-  "https://api.dicebear.com/9.x/bottts/svg?seed=Pixel&backgroundColor=0f3460",
-  "https://api.dicebear.com/9.x/bottts/svg?seed=Nexus&backgroundColor=533483",
-]
+import { ProfileTypes } from "@/features/profiles/types/profile.types"
+import { useGetImages } from "@/shared/hooks/useGetImages"
 
 const MAX_PROFILES = 5
 
@@ -80,21 +68,30 @@ function EmptySlot({ onClick }: { onClick: () => void }) {
 /* ─── Main component ─────────────────────────────────── */
 export default function ProfilesStep() {
   const router = useRouter()
+  const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
+  const setStoreProfiles = createUserStorage((s) => s.setProfiles)
+  const createProfiles = createUserStorage((s) => s.createProfiles)
+  const allowed = useRegistrationGuard(4)
+
+  const { data: imageData, isLoading: imagesLoading } = useGetImages()
+  const avatarUrls = imageData?.map((img) => img.secureUrl) ?? []
 
   const [profiles, setProfiles] = useState<Profile[]>([])
   const [view, setView] = useState<"list" | "edit">("list")
   const [editingId, setEditingId] = useState<string | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState("")
 
   // Draft state for the editor
   const [draftName, setDraftName] = useState("")
-  const [draftAvatar, setDraftAvatar] = useState(PRESET_AVATARS[0])
+  const [draftAvatar, setDraftAvatar] = useState("")
   const [draftKids, setDraftKids] = useState(false)
   const [nameError, setNameError] = useState("")
 
   const openNew = () => {
     setEditingId(null)
     setDraftName("")
-    setDraftAvatar(PRESET_AVATARS[0])
+    setDraftAvatar(avatarUrls[0] ?? "")
     setDraftKids(false)
     setNameError("")
     setView("edit")
@@ -138,9 +135,10 @@ export default function ProfilesStep() {
         ...prev,
         {
           id: generateId(),
+          userId: "",
           profileName: draftName.trim(),
           profilePhotoUrl: draftAvatar,
-          profileType: 1,
+          profileType: draftKids ? ProfileTypes.Kids : ProfileTypes.Adult,
           kidsProfile: draftKids,
         },
       ])
@@ -158,7 +156,7 @@ export default function ProfilesStep() {
   if (view === "list") {
     const emptySlots = MAX_PROFILES - profiles.length
     return (
-      <AuthLayout step={3} totalSteps={5} title="Profiles" wide>
+      <AuthLayout step={5} totalSteps={5} title="Profiles" wide>
         <div className="mb-6">
           <h2 className="text-xl font-bold text-white">Create Profiles</h2>
           <p className="mt-1 text-xs text-white/40">
@@ -178,15 +176,45 @@ export default function ProfilesStep() {
 
         <button
           type="button"
-          disabled={profiles.length === 0}
-          onClick={() => router.push("/register/step4")}
-          className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${profiles.length > 0
+          disabled={profiles.length === 0 || submitting}
+          onClick={async () => {
+            setSubmitting(true)
+            setSubmitError("")
+            try {
+              const requests = profiles.map((p) => ({
+                ProfileName: p.profileName,
+                ProfilePhotoUrl: p.profilePhotoUrl,
+                ProfileType: p.kidsProfile ? ProfileTypes.Kids : ProfileTypes.Adult,
+                KidsProfile: p.kidsProfile,
+              }))
+              // Persist to store
+              setStoreProfiles(requests)
+              // Call API once with the full array
+              await createProfiles(requests)
+              setCompletedStep(5)
+              router.push("/register/welcome")
+            } catch (err) {
+              setSubmitError(err instanceof Error ? err.message : "Failed to create profiles. Please try again.")
+              setSubmitting(false)
+            }
+          }}
+          className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${profiles.length > 0 && !submitting
               ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
               : "cursor-not-allowed bg-white/10 text-white/30"
             }`}
         >
-          Continue
+          {submitting ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 size={14} className="animate-spin" /> Creating profiles…
+            </span>
+          ) : (
+            "Continue"
+          )}
         </button>
+
+        {submitError && (
+          <p className="mt-2 text-center text-xs text-red-400">{submitError}</p>
+        )}
 
         {profiles.length === 0 && (
           <p className="mt-2 text-center text-xs text-white/25">Add at least one profile to continue</p>
@@ -197,7 +225,7 @@ export default function ProfilesStep() {
 
   /* ── EDIT VIEW ── */
   return (
-    <AuthLayout step={3} totalSteps={5} title="Profiles" wide>
+    <AuthLayout step={5} totalSteps={5} title="Profiles" wide>
       {/* Header */}
       <div className="mb-5 flex items-center gap-3">
         <button
@@ -286,26 +314,36 @@ export default function ProfilesStep() {
         <p className="mb-2.5 text-[11px] font-semibold uppercase tracking-widest text-white/35">
           Choose Avatar
         </p>
-        <div className="grid grid-cols-6 gap-2">
-          {PRESET_AVATARS.map((url) => (
-            <button
-              key={url}
-              type="button"
-              onClick={() => setDraftAvatar(url)}
-              className={`relative overflow-hidden rounded-full border-2 transition-all ${draftAvatar === url
-                  ? "border-blue-500 shadow-md shadow-blue-500/30"
-                  : "border-white/10 hover:border-white/30"
-                }`}
-            >
-              <img src={url} alt="" className="h-full w-full object-cover aspect-square" />
-              {draftAvatar === url && (
-                <span className="absolute inset-0 flex items-center justify-center bg-blue-500/20">
-                  <Check size={14} className="text-white drop-shadow" />
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
+        {imagesLoading ? (
+          <div className="grid grid-cols-6 gap-2">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="aspect-square rounded-full bg-white/8 animate-pulse" />
+            ))}
+          </div>
+        ) : avatarUrls.length === 0 ? (
+          <p className="text-xs text-white/30">No avatars available</p>
+        ) : (
+          <div className="grid grid-cols-6 gap-2">
+            {avatarUrls.map((url) => (
+              <button
+                key={url}
+                type="button"
+                onClick={() => setDraftAvatar(url)}
+                className={`relative overflow-hidden rounded-full border-2 transition-all ${draftAvatar === url
+                    ? "border-blue-500 shadow-md shadow-blue-500/30"
+                    : "border-white/10 hover:border-white/30"
+                  }`}
+              >
+                <img src={url} alt="" className="h-full w-full object-cover aspect-square" />
+                {draftAvatar === url && (
+                  <span className="absolute inset-0 flex items-center justify-center bg-blue-500/20">
+                    <Check size={14} className="text-white drop-shadow" />
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Actions */}

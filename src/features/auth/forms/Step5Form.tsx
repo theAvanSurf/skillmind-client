@@ -1,19 +1,30 @@
 "use client"
 
 import React, { useState, useRef, useEffect, useCallback } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
+import { Loader2 } from "lucide-react"
 import AuthLayout from "../components/AuthLayout"
+import { useRegistrationGuard } from "../hooks/useRegistrationGuard"
+import { createUserStorage } from "@/store/create-user-storage"
+import AuthenticationServices from "@/features/auth/services/auth-services"
+
+const authServices = new AuthenticationServices()
 
 const CODE_LENGTH = 6
 const RESEND_COOLDOWN = 60
 
 export default function VerificationStep() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const rawEmail = searchParams.get("email") ?? ""
+  const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
+  const setUser = createUserStorage((s) => s.setUser)
+  const setToken = createUserStorage((s) => s.setToken)
+  const userId = createUserStorage((s) => s.userId)
+  const draft = createUserStorage((s) => s.registrationDraft)
+  const allowed = useRegistrationGuard(3)
 
   const [code, setCode] = useState<string[]>(Array(CODE_LENGTH).fill(""))
   const [error, setError] = useState("")
+  const [loading, setLoading] = useState(false)
   const [resending, setResending] = useState(false)
   const [cooldown, setCooldown] = useState(0)
   const [shake, setShake] = useState(false)
@@ -28,7 +39,7 @@ export default function VerificationStep() {
     if (local.length <= 2) return `${local[0]}***@${domain}`
     return `${local.slice(0, 2)}***@${domain}`
   }
-  const maskedEmail = rawEmail ? maskEmail(rawEmail) : "***@***.com"
+  const maskedEmail = draft.email ? maskEmail(draft.email) : "***@***.com"
 
   const startCooldown = useCallback(() => {
     setCooldown(RESEND_COOLDOWN)
@@ -78,24 +89,58 @@ export default function VerificationStep() {
     inputsRef.current[Math.min(pasted.length, CODE_LENGTH - 1)]?.focus()
   }
 
-  const handleVerify = () => {
-    // Simulate wrong code (any code starting with 0 = invalid, for demo)
-    if (code[0] === "0") {
-      setError("Incorrect code. Please check your email and try again.")
+  const handleVerify = async () => {
+    if (!isFilled || loading) return
+    setLoading(true)
+    setError("")
+
+    try {
+      // 1 — Confirm account with OTP
+      await authServices.confirmAccount({
+        UserId: userId ?? "",
+        Code: code.join(""),
+      })
+
+      // 2 — Silent login so the user gets a token right away
+      const loginResponse = await authServices.login({
+        userName: draft.userName ?? draft.email ?? "",
+        password: draft.password ?? "",
+      })
+
+      setToken(loginResponse.jwtToken)
+      setUser({
+        name: loginResponse.name,
+        lastName: loginResponse.lastName,
+        userName: draft.userName ?? "",
+        email: loginResponse.email,
+        password: "",
+        birthDate: new Date(draft.birthDate ?? ""),
+        phoneNumber: draft.phone ?? "",
+        country: draft.country ?? "",
+        accountTypes: draft.plan === "premium" ? 1 : 0,
+        role: 2,
+      })
+
+      setCompletedStep(4)
+      router.push("/register/profiles")
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Incorrect code. Please try again."
+      setError(msg)
       setShake(true)
       setTimeout(() => setShake(false), 600)
       setCode(Array(CODE_LENGTH).fill(""))
       inputsRef.current[0]?.focus()
-      return
+    } finally {
+      setLoading(false)
     }
-    router.push("/register/welcome")
   }
 
   const handleResend = async () => {
     if (cooldown > 0 || resending) return
     setResending(true)
     setError("")
-    await new Promise((r) => setTimeout(r, 1200))
+    // TODO: call resend-otp endpoint when available on the backend
+    await new Promise((r) => setTimeout(r, 1000))
     setResending(false)
     setCode(Array(CODE_LENGTH).fill(""))
     inputsRef.current[0]?.focus()
@@ -107,7 +152,7 @@ export default function VerificationStep() {
     : "h-12 w-12 rounded-xl border border-white/10 bg-white/[0.06] text-center text-lg font-semibold text-white outline-none transition focus:border-blue-500/50 focus:bg-white/[0.09] focus:ring-2 focus:ring-blue-500/15"
 
   return (
-    <AuthLayout step={5} totalSteps={5} title="Verification">
+    <AuthLayout step={4} totalSteps={5} title="Verification">
       <div className="mb-6 text-center">
         <h2 className="text-xl font-bold text-white">Verify Your Email</h2>
         <p className="mt-2 text-sm text-white/45">
@@ -143,15 +188,21 @@ export default function VerificationStep() {
       <div className={error ? "" : "mt-4"}>
         <button
           type="button"
-          disabled={!isFilled}
+          disabled={!isFilled || loading}
           onClick={handleVerify}
           className={`w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
-            isFilled
+            isFilled && !loading
               ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
               : "cursor-not-allowed bg-white/10 text-white/30"
           }`}
         >
-          Verify &amp; Finish
+          {loading ? (
+            <span className="flex items-center justify-center gap-2">
+              <Loader2 size={14} className="animate-spin" /> Verifying…
+            </span>
+          ) : (
+            "Verify & Continue"
+          )}
         </button>
 
         <button
