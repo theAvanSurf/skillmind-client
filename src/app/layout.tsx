@@ -5,6 +5,8 @@ import "./globals.css";
 
 import { Providers } from "src/providers/providers";
 import { Toaster } from "sileo";
+import { SplashScreen } from "@/shared/components/splash";
+import "@/shared/components/splash/splash.css";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -21,6 +23,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body className={`${poppins.variable} font-poppins antialiased`}>
+        <SplashScreen /> 
         <Toaster
           position="top-center"
           offset={32}
