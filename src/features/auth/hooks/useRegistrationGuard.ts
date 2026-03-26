@@ -10,8 +10,9 @@ export const RESUME_ROUTE: Record<number, string> = {
   1: "/register/step2",
   2: "/register/step3",
   3: "/register/step5",
-  4: "/register/profiles",
-  5: "/register/welcome",
+  4: "/register/billing",   // premium: after email verify
+  5: "/register/profiles", // free: after email verify; premium: after billing
+  6: "/register/welcome",
 }
 
 /**

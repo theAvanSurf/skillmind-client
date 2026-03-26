@@ -121,8 +121,14 @@ export default function VerificationStep() {
         role: 2,
       })
 
-      setCompletedStep(4)
-      router.push("/register/profiles")
+      // Premium users go to billing (needs auth token); free users skip to profiles
+      if (draft.plan === "premium") {
+        setCompletedStep(4)
+        router.push("/register/billing")
+      } else {
+        setCompletedStep(5)
+        router.push("/register/profiles")
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Incorrect code. Please try again."
       setError(msg)

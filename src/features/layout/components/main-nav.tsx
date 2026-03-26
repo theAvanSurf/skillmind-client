@@ -3,10 +3,16 @@
 import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { Brain, Menu, X } from "lucide-react"
+import { ProfileSwitcher } from "./ProfileSwitcher"
+import type { Profile } from "@/features/profiles/types/profile.types"
+import type { Device } from "@/types/session.types"
 
 interface MainNavProps {
   userName?: string
   userAvatar?: string | null
+  initialProfiles?: Profile[]
+  initialDevices?: Device[]
+  activeProfileId?: string
 }
 
 const navLinks = [
@@ -20,10 +26,12 @@ const navLinks = [
 export default function MainNav({
   userName = "Sabrina",
   userAvatar = null,
+  initialProfiles = [],
+  initialDevices = [],
+  activeProfileId = "",
 }: MainNavProps) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const initial = userName.charAt(0).toUpperCase()
   const mounted = useRef(false)
 
   useEffect(() => {
@@ -53,7 +61,7 @@ export default function MainNav({
         style={{ padding: scrolled ? "0 16px" : "0" }}
       >
         <div
-          className="pointer-events-auto w-full overflow-hidden backdrop-blur-xl"
+          className="pointer-events-auto w-full backdrop-blur-xl"
           style={{
             transition,
             willChange: "max-width, border-radius, margin-top, background-color, box-shadow",
@@ -124,29 +132,17 @@ export default function MainNav({
               ))}
             </ul>
 
-            {/* Right: avatar + hamburger */}
+            {/* Right: profile switcher + hamburger */}
             <div className="flex shrink-0 items-center gap-2">
-              <div
-                className="overflow-hidden rounded-full bg-linear-to-br from-blue-400 to-indigo-500 shadow-sm"
-                style={{ transition, width: scrolled ? "28px" : "36px", height: scrolled ? "28px" : "36px" }}
-              >
-                {userAvatar ? (
-                  <img src={userAvatar} alt={userName} className="h-full w-full object-cover" />
-                ) : (
-                  <div
-                    className="flex h-full w-full items-center justify-center font-bold text-white"
-                    style={{ transition, fontSize: scrolled ? "10px" : "13px" }}
-                  >
-                    {initial}
-                  </div>
-                )}
-              </div>
-              <span
-                className="hidden overflow-hidden whitespace-nowrap text-sm font-medium text-white/60 sm:block"
-                style={{ transition, opacity: scrolled ? 0 : 1, maxWidth: scrolled ? "0px" : "120px" }}
-              >
-                {userName}
-              </span>
+              <ProfileSwitcher
+                initialName={userName}
+                initialAvatar={userAvatar ?? null}
+                initialProfiles={initialProfiles}
+                initialDevices={initialDevices}
+                activeProfileId={activeProfileId}
+                scrolled={scrolled}
+                transition={transition}
+              />
               {/* Hamburger — mobile only */}
               <button
                 className="flex h-8 w-8 items-center justify-center rounded-full text-white/60 hover:bg-white/10 hover:text-white sm:hidden"
@@ -194,12 +190,15 @@ export default function MainNav({
               </Link>
             ))}
             <div className="mt-3 border-t border-white/8 pt-3">
-              <div className="flex items-center gap-3 px-3 py-2">
-                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-linear-to-br from-blue-400 to-indigo-500 text-xs font-bold text-white">
-                  {initial}
-                </div>
-                <span className="text-sm font-medium text-white/60">{userName}</span>
-              </div>
+              <ProfileSwitcher
+                initialName={userName}
+                initialAvatar={userAvatar ?? null}
+                initialProfiles={initialProfiles}
+                initialDevices={initialDevices}
+                activeProfileId={activeProfileId}
+                scrolled={false}
+                transition="none"
+              />
             </div>
           </div>
         </div>

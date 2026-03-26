@@ -71,7 +71,7 @@ export default function ProfilesStep() {
   const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
   const setStoreProfiles = createUserStorage((s) => s.setProfiles)
   const createProfiles = createUserStorage((s) => s.createProfiles)
-  const allowed = useRegistrationGuard(4)
+  const allowed = useRegistrationGuard(5)
 
   const { data: imageData, isLoading: imagesLoading } = useGetImages()
   const avatarUrls = imageData?.map((img) => img.secureUrl) ?? []
@@ -191,7 +191,7 @@ export default function ProfilesStep() {
               setStoreProfiles(requests)
               // Call API once with the full array
               await createProfiles(requests)
-              setCompletedStep(5)
+              setCompletedStep(6)
               router.push("/register/welcome")
             } catch (err) {
               setSubmitError(err instanceof Error ? err.message : "Failed to create profiles. Please try again.")

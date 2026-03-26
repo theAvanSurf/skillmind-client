@@ -50,20 +50,13 @@ export default function PlanSelectionStep() {
     setRegistrationDraft({ plan: selectedPlan })
     setApiError("")
 
-    if (selectedPlan === "premium") {
-      // Sign-up happens after billing payment succeeds
-      setCompletedStep(3)
-      router.push("/register/billing?plan=premium")
-      return
-    }
-
     // If already signed up (backtracking), skip the API call
     if (completedStep >= 3) {
       router.push("/register/step5")
       return
     }
 
-    // Free plan — create account now
+    // Create account for both free and premium — billing happens after email verify
     setLoading(true)
     try {
       const response = await authServices.signUp({
@@ -75,7 +68,7 @@ export default function PlanSelectionStep() {
         BirthDate: draft.birthDate ?? "",
         PhoneNumber: draft.phone ?? "",
         Country: draft.country ?? "",
-        AccountTypes: 0,
+        AccountTypes: selectedPlan === "premium" ? 1 : 0,
         Role: 2,
       })
 
