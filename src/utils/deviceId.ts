@@ -1,22 +1,20 @@
-const DEVICE_ID_KEY = "skillmind.deviceId";
+const DEVICE_ID_KEY = "skillmind:deviceId";
 
-function createDeviceId(): string {
-    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-        return crypto.randomUUID();
+/**
+ * Returns a stable device ID for this browser, creating and persisting one
+ * in localStorage if none exists yet.
+ */
+export function getOrCreateDeviceId(): string {
+    if (typeof window === "undefined") return "";
+    let id = localStorage.getItem(DEVICE_ID_KEY);
+    if (!id) {
+        id = crypto.randomUUID();
+        localStorage.setItem(DEVICE_ID_KEY, id);
     }
-
-    return `device-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    return id;
 }
 
-export function getOrCreateDeviceId(): string {
-    if (typeof window === "undefined") {
-        return "server-device";
-    }
-
-    const existing = window.localStorage.getItem(DEVICE_ID_KEY);
-    if (existing) return existing;
-
-    const id = createDeviceId();
-    window.localStorage.setItem(DEVICE_ID_KEY, id);
-    return id;
+export function getDeviceId(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(DEVICE_ID_KEY);
 }

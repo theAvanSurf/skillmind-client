@@ -5,7 +5,7 @@ import { LogOut, MonitorX, Loader2 } from "lucide-react";
 import { sileo } from "sileo";
 import { Profile as ProfileCard } from "@/features/profiles/components/profile";
 import { useSession } from "@/features/sessions/hooks/useSession";
-import { getOrCreateDeviceId } from "../../../utils/deviceId";
+import { getOrCreateDeviceId } from "@/utils/deviceId";
 import { Profile } from "@/features/profiles/types/profile.types";
 import { useRouter } from "next/navigation";
 

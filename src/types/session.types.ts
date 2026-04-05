@@ -5,6 +5,11 @@ export interface Device {
     profileId: string;
 }
 
+export interface AddDeviceRequest {
+    DeviceId: string;
+    ProfileId: string;
+}
+
 export interface Session {
     sessionId: string;
     userId: string;

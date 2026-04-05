@@ -7,10 +7,17 @@ import { z } from "zod"
 import { Eye, EyeOff } from "lucide-react"
 import { useRouter } from "next/navigation"
 import AuthLayout from "../components/AuthLayout"
+import { useRegistrationGuard } from "../hooks/useRegistrationGuard"
+import { createUserStorage } from "@/store/create-user-storage"
 
 const schema = z
   .object({
     email: z.string().min(1, "Email is required").email("Enter a valid email address"),
+    userName: z
+      .string()
+      .min(3, "At least 3 characters")
+      .max(30, "Max 30 characters")
+      .regex(/^[a-zA-Z0-9_]+$/, "Only letters, numbers, and underscores"),
     password: z
       .string()
       .min(8, "At least 8 characters")
@@ -54,6 +61,10 @@ const field = (error?: boolean) =>
 
 export default function AccountInfoStep() {
   const router = useRouter()
+  const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
+  const setRegistrationDraft = createUserStorage((s) => s.setRegistrationDraft)
+  const draft = createUserStorage((s) => s.registrationDraft)
+  const allowed = useRegistrationGuard(1)
   const [showPw, setShowPw] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
 
@@ -65,6 +76,12 @@ export default function AccountInfoStep() {
   } = useForm<FormData>({
     resolver: zodResolver(schema),
     mode: "onTouched",
+    defaultValues: {
+      email: draft.email ?? "",
+      userName: draft.userName ?? "",
+      password: draft.password ?? "",
+      confirmPassword: draft.password ?? "",
+    },
   })
 
   const pwValue = watch("password") ?? ""
@@ -78,7 +95,11 @@ export default function AccountInfoStep() {
         <p className="mt-1 text-xs text-white/40">Set up your login credentials</p>
       </div>
 
-      <form onSubmit={handleSubmit(() => router.push("/register/step3"))} className="space-y-3" noValidate>
+      <form onSubmit={handleSubmit((data) => {
+        setRegistrationDraft({ email: data.email, userName: data.userName, password: data.password })
+        setCompletedStep(2)
+        router.push("/register/step3")
+      })} className="space-y-3" noValidate>
         {/* Email */}
         <div>
           <input
@@ -89,6 +110,18 @@ export default function AccountInfoStep() {
             className={field(!!errors.email)}
           />
           {errors.email && <p className="mt-1 text-xs text-red-400">{errors.email.message}</p>}
+        </div>
+
+        {/* Username */}
+        <div>
+          <input
+            {...register("userName")}
+            type="text"
+            placeholder="Username"
+            autoComplete="username"
+            className={field(!!errors.userName)}
+          />
+          {errors.userName && <p className="mt-1 text-xs text-red-400">{errors.userName.message}</p>}
         </div>
 
         {/* Password */}
@@ -154,17 +187,26 @@ export default function AccountInfoStep() {
           )}
         </div>
 
-        <button
-          type="submit"
-          disabled={!isValid}
-          className={`mt-2 w-full rounded-xl py-3 text-sm font-semibold text-white transition-all ${
-            isValid
-              ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
-              : "cursor-not-allowed bg-white/10 text-white/30"
-          }`}
-        >
-          Continue
-        </button>
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/register")}
+            className="rounded-xl border border-white/10 py-3 text-sm font-semibold text-white/60 transition-all hover:border-white/20 hover:text-white/90"
+          >
+            Back
+          </button>
+          <button
+            type="submit"
+            disabled={!isValid}
+            className={`rounded-xl py-3 text-sm font-semibold text-white transition-all ${
+              isValid
+                ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
+                : "cursor-not-allowed bg-white/10 text-white/30"
+            }`}
+          >
+            Continue
+          </button>
+        </div>
       </form>
     </AuthLayout>
   )

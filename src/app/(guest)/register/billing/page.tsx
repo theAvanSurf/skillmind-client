@@ -2,35 +2,40 @@
 
 import { useState, useEffect, Suspense } from "react"
 import { Elements } from "@stripe/react-stripe-js"
-import { useRouter, useSearchParams } from "next/navigation"
-import PaymentForm from "@/app/(guest)/register/PaymentForm"
-import BillingSummary from "@/app/(guest)/register/BillingSummary"
+import { useRouter } from "next/navigation"
 import AuthLayout from "@/features/auth/components/AuthLayout"
 import { stripePromise } from "@/lib/stripe"
-import { sileo } from "sileo"
+import { useRegistrationGuard } from "@/features/auth/hooks/useRegistrationGuard"
+import { createUserStorage } from "@/store/create-user-storage"
+import PaymentForm from "@/app/(guest)/register/PaymentForm"
+import BillingSummary from "@/app/(guest)/register/BillingSummary"
 import type { PlanType, BillingInfo } from "@/types/billing.types"
 
-const premiumPlan: PlanType = {
+const PREMIUM_PLAN: PlanType = {
   id: "premium",
-  name: "Premium Plan",
+  name: "SkillMind Premium",
   price: 9.99,
   interval: "month",
-  priceId: process.env.NEXT_PUBLIC_STRIPE_PREMIUM_PRICE_ID || "price_premium",
+  features: ["Unlimited courses", "AI personalisation", "Certificates"],
   popular: true,
-  features: [
-    "Up to five users profiles",
-    "Access on 6 devices",
-    "Detailed progress statistics",
-    "HD and 4K video quality",
-    "Download courses to watch offline",
-    "Playlists and favorites",
-  ],
+  priceId: "Skillmind_Premium_Plan-42a1204",
+}
+
+const TAX_RATE = 0.18 // ITBIS 18 %
+
+function buildBillingInfo(plan: PlanType, discount = 0, promoCode?: string): BillingInfo {
+  const subtotal = plan.price
+  const discountAmt = discount
+  const taxable = subtotal - discountAmt
+  const tax = parseFloat((taxable * TAX_RATE).toFixed(2))
+  const total = parseFloat((taxable + tax).toFixed(2))
+  return { plan, subtotal, tax, discount: discountAmt, total, promoCode }
 }
 
 export default function BillingPage() {
   return (
     <Suspense fallback={
-      <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
+      <AuthLayout step={4} totalSteps={6} title="Billing" wide>
         <div className="flex justify-center py-20">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500" />
         </div>
@@ -43,98 +48,76 @@ export default function BillingPage() {
 
 function BillingPageInner() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  // We can retrieve email from query if passed, otherwise default or ask user
-  // For now let's assume we don't have it and the PaymentForm will handle collecting details for Stripe.
+  const completedStep = createUserStorage((s) => s.completedStep)
+  const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
+  const allowed = useRegistrationGuard(4)
 
   const [clientSecret, setClientSecret] = useState("")
   const [error, setError] = useState("")
-  const [loading, setLoading] = useState(true)
+  const [billingInfo, setBillingInfo] = useState<BillingInfo>(() =>
+    buildBillingInfo(PREMIUM_PLAN)
+  )
 
-  const [billingInfo, setBillingInfo] = useState<BillingInfo>({
-    plan: premiumPlan,
-    subtotal: premiumPlan.price,
-    tax: premiumPlan.price * 0.18,
-    discount: 0,
-    total: premiumPlan.price + (premiumPlan.price * 0.18),
-  })
-
+  // If billing was already completed, skip ahead
   useEffect(() => {
-    // Create Payment Intent on mount
-    const createIntent = async () => {
+    if (completedStep >= 5) {
+      router.replace("/register/profiles")
+    }
+  }, [completedStep, router])
+
+  // Call create-subscription on mount to get the PaymentIntent clientSecret
+  useEffect(() => {
+    if (!allowed) return
+    const init = async () => {
       try {
-        const promise = fetch("/api/create-payment-intent", {
+        const res = await fetch("/api/payment/create-subscription", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: "user@example.com",
-            amount: Math.round(billingInfo.total * 100),
-          }),
-        }).then(async (res) => {
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error || "Failed to initialize payment");
-          return data;
-        });
-
-        const data = await sileo.promise(promise, {
-          loading: { title: "Initializing payment...", description: "Setting up secure checkout" },
-          success: { title: "Ready to pay", description: "Payment intent created successfully" },
-          error: (err: any) => ({
-            title: "Payment Error",
-            description: err.message || "Failed to initialize payment flow"
-          })
-        });
-
+          body: JSON.stringify({ lookupKey: PREMIUM_PLAN.priceId }),
+        })
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.message || "Failed to initialise checkout")
         setClientSecret(data.clientSecret)
       } catch (err) {
-        console.error(err)
-        setError("Failed to initialize payment. Please try again.")
-      } finally {
-        setLoading(false)
+        setError(err instanceof Error ? err.message : "Failed to initialise checkout")
       }
     }
-
-    createIntent()
-  }, []) // eslint-disable-line
+    init()
+  }, [allowed]) // eslint-disable-line
 
   const handleApplyPromo = (code: string) => {
-    if (code === "SAVE10") {
-      const discount = billingInfo.subtotal * 0.1;
-      const newTotal = billingInfo.subtotal - discount + billingInfo.tax;
-      setBillingInfo((prev) => ({
-        ...prev,
-        discount,
-        total: newTotal,
-      }));
-    }
+    // Placeholder — wire to a real promo-code API when available
+    const discount = code.toUpperCase() === "SKILL10" ? 1.0 : 0
+    setBillingInfo(buildBillingInfo(PREMIUM_PLAN, discount, code))
   }
+
+  const handleBack = () => router.back()
 
   const handleSuccess = () => {
-    router.push("/register/step5")
+    setCompletedStep(5)
+    router.push("/register/profiles")
   }
 
-  const handleBack = () => {
-    router.back()
-  }
-
-  if (loading) {
-    return (
-      <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
-        <div className="flex justify-center py-20">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-        </div>
-      </AuthLayout>
-    )
+  const stripeAppearance = {
+    theme: "night" as const,
+    variables: {
+      colorPrimary: "#3b82f6",
+      colorBackground: "#0f172a",
+      colorText: "#f8fafc",
+      colorDanger: "#ef4444",
+      fontFamily: "ui-sans-serif, system-ui, sans-serif",
+      borderRadius: "12px",
+    },
   }
 
   if (error) {
     return (
-      <AuthLayout step={4} totalSteps={5} title="Billing Information" wide>
-        <div className="text-center py-10">
-          <p className="text-red-500 mb-4">{error}</p>
+      <AuthLayout step={4} totalSteps={6} title="Billing" wide>
+        <div className="flex flex-col items-center gap-4 py-16 text-center">
+          <p className="text-sm text-red-400">{error}</p>
           <button
             onClick={() => window.location.reload()}
-            className="text-indigo-700 underline"
+            className="rounded-xl border border-white/10 px-4 py-2 text-sm text-white/60 transition hover:border-white/20 hover:text-white/90"
           >
             Try Again
           </button>
@@ -143,75 +126,35 @@ function BillingPageInner() {
     )
   }
 
-  const appearance = {
-    theme: 'night' as const,
-    variables: {
-      colorPrimary: '#3b82f6',
-      colorBackground: '#ffffff0a',
-      colorText: '#ffffff',
-      colorTextSecondary: '#ffffff99',
-      colorTextPlaceholder: '#ffffff40',
-      colorIconTab: '#ffffff',
-      borderRadius: '12px',
-      fontFamily: 'Poppins, sans-serif',
-    },
-    rules: {
-      '.Input': {
-        border: '1px solid rgba(255,255,255,0.10)',
-        backgroundColor: 'rgba(255,255,255,0.06)',
-        color: '#ffffff',
-      },
-      '.Input:focus': {
-        border: '1px solid rgba(249,115,22,0.5)',
-        boxShadow: '0 0 0 2px rgba(249,115,22,0.15)',
-      },
-      '.Tab': {
-        border: '1px solid rgba(255,255,255,0.08)',
-        backgroundColor: 'rgba(255,255,255,0.04)',
-      },
-      '.Tab:hover': {
-        backgroundColor: 'rgba(255,255,255,0.07)',
-      },
-      '.Tab--selected': {
-        border: '1px solid rgba(249,115,22,0.4)',
-        backgroundColor: 'rgba(249,115,22,0.08)',
-      },
-    },
-  };
-  const options = {
-    clientSecret,
-    appearance,
-  };
-
   return (
-    <AuthLayout step={4} totalSteps={5} title="Billing Information" subtitle="Secure Payment" wide>
-      <div className="flex flex-col gap-6 lg:flex-row">
-        {/* Payment Form — takes ~60% */}
-        <div className="flex-1 min-w-0">
-          {clientSecret && (
-            <Elements options={options} stripe={stripePromise}>
-              <PaymentForm
-                plan={premiumPlan}
-                billingInfo={billingInfo}
-                onBack={handleBack}
-                onSuccess={handleSuccess}
-                returnUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/register/step5`}
-              />
-            </Elements>
-          )}
+    <AuthLayout step={4} totalSteps={6} title="Billing" wide>
+      {clientSecret ? (
+        <Elements
+          stripe={stripePromise}
+          options={{ clientSecret, appearance: stripeAppearance }}
+        >
+          <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+            {/* Left — payment form */}
+            <PaymentForm
+              plan={PREMIUM_PLAN}
+              billingInfo={billingInfo}
+              onBack={handleBack}
+              onSuccess={handleSuccess}
+              returnUrl={`${typeof window !== "undefined" ? window.location.origin : ""}/register/billing/return`}
+            />
+            {/* Right — billing summary */}
+            <BillingSummary
+              billingInfo={billingInfo}
+              onApplyPromo={handleApplyPromo}
+            />
+          </div>
+        </Elements>
+      ) : (
+        <div className="flex justify-center py-20">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500" />
         </div>
-
-        {/* Vertical divider */}
-        <div className="hidden lg:block w-px bg-white/6 self-stretch" />
-
-        {/* Billing Summary — fixed width sidebar */}
-        <div className="lg:w-64 shrink-0">
-          <BillingSummary
-            billingInfo={billingInfo}
-            onApplyPromo={handleApplyPromo}
-          />
-        </div>
-      </div>
+      )}
     </AuthLayout>
   )
 }
+

@@ -20,21 +20,21 @@ function normalizeProfile(value: unknown): Profile | null {
     const record = asRecord(value);
     if (!record) return null;
 
-    const id = asString(record.id);
+    const id = asString(record.id ?? (record as any).Id);
     if (!id) return null;
 
     const profileType =
         typeof record.profileType === "number"
             ? record.profileType
-            : 0;
+            : (typeof (record as any).ProfileType === "number" ? (record as any).ProfileType : 0);
 
     return {
         id,
-        userId: asString(record.userId),
-        profileName: asString(record.profileName, "Profile"),
-        profilePhotoUrl: asString(record.profilePhotoUrl),
+        userId: asString(record.userId ?? (record as any).UserId),
+        profileName: asString(record.profileName ?? (record as any).ProfileName, "Profile"),
+        profilePhotoUrl: asString(record.profilePhotoUrl ?? (record as any).ProfilePhotoUrl),
         profileType,
-        kidsProfile: asBoolean(record.kidsProfile),
+        kidsProfile: asBoolean(record.kidsProfile ?? (record as any).KidsProfile),
     };
 }
 
@@ -46,8 +46,8 @@ function normalizeConnectedDevices(value: unknown): Device[] {
             const record = asRecord(entry);
             if (!record) return null;
 
-            const deviceId = asString(record.deviceId);
-            const profileId = asString(record.profileId);
+            const deviceId = asString(record.deviceId ?? (record as any).DeviceId);
+            const profileId = asString(record.profileId ?? (record as any).ProfileId);
 
             if (!deviceId || !profileId) return null;
             return { deviceId, profileId };
@@ -77,15 +77,15 @@ export function normalizeSession(raw: unknown): Session {
     const connectedDevices = normalizeConnectedDevices(payload.connectedDevices);
 
     return {
-        sessionId: asString(payload.sessionId),
-        userId: asString(payload.userId),
+        sessionId: asString(payload.sessionId ?? (payload as any).SessionId),
+        userId: asString(payload.userId ?? (payload as any).UserId),
         profiles,
         connectedDevices,
         connectedDevicesCount:
             typeof payload.connectedDevicesCount === "number"
                 ? payload.connectedDevicesCount
                 : connectedDevices.length,
-        createdAt: asString(payload.createdAt),
-        expiresAt: asString(payload.expiresAt),
+        createdAt: asString(payload.createdAt ?? (payload as any).CreatedAt),
+        expiresAt: asString(payload.expiresAt ?? (payload as any).ExpiresAt),
     };
 }
