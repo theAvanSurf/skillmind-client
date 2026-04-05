@@ -4,13 +4,18 @@ import { useParams } from "next/navigation";
 import { VideoPlayer } from "@/shared/video-player/VideoPlayer";
 
 
+// Cloudinary adaptive streaming: append sp_auto and change extension to .m3u8 (HLS)
+// Shaka Player will pick up multiple quality tracks automatically
+const CLOUDINARY_HLS =
+  "https://res.cloudinary.com/dgsfeis7x/video/upload/sp_auto/v1769999430/uploads/yfhx58pwpsoywx7lcrzf.m3u8";
+
 const continueData = [
   {
     id: 1,
     title: "Advanced React Patterns",
     description: "Aprende patrones avanzados de React usados en producción.",
     duration: "45 mins",
-    videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+    videoUrl: CLOUDINARY_HLS,
     seasonName: "Season 1 - React",
     chapterName: "Hooks avanzados",
     episodeNumber: 1,
@@ -20,7 +25,7 @@ const continueData = [
     title: "TypeScript Essentials",
     description: "Domina TypeScript desde cero.",
     duration: "30 mins",
-    videoUrl: "https://www.w3schools.com/html/movie.mp4",
+    videoUrl: CLOUDINARY_HLS,
     seasonName: "Season 1 - TypeScript",
     chapterName: "Tipos básicos",
     episodeNumber: 2,
@@ -51,8 +56,9 @@ export default function CoursePlayerPage() {
         seasonName={course.seasonName}
         chapterName={course.chapterName}
         episodeNumber={course.episodeNumber}
+        storageKey={`course-${course.id}`}
         onProgressUpdate={(progress, time) => {
-          console.log("Progreso:", progress, "Tiempo:", time);
+          console.log("Progress:", progress, "Time:", time);
         }}
       />
 
