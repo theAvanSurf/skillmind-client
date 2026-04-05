@@ -6,7 +6,7 @@ import { sileo } from "sileo";
 const profileServices = new ProfilesService();
 
 export function useCreateProfile() {
-    return useMutation<Profile, unknown, CreateProfileRequest>({
+    return useMutation<Profile[], unknown, CreateProfileRequest>({
         mutationKey: ["create-profile"],
         mutationFn: async (request: CreateProfileRequest) => {
             return await sileo.promise(profileServices.createProfile(request), {
