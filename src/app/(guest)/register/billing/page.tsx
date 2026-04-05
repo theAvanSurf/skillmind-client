@@ -32,6 +32,18 @@ function buildBillingInfo(plan: PlanType, discount = 0, promoCode?: string): Bil
   return { plan, subtotal, tax, discount: discountAmt, total, promoCode }
 }
 
+function normalizeClientSecret(raw: unknown): string {
+  const secret = typeof raw === "string" ? raw.trim() : ""
+  if (!secret) return ""
+
+  // Backend may return URL-encoded secrets. Stripe Elements expects the decoded form.
+  try {
+    return decodeURIComponent(secret)
+  } catch {
+    return secret
+  }
+}
+
 export default function BillingPage() {
   return (
     <Suspense fallback={
@@ -73,11 +85,15 @@ function BillingPageInner() {
         const res = await fetch("/api/payment/create-subscription", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ lookupKey: PREMIUM_PLAN.priceId }),
+          body: JSON.stringify({}),
         })
         const data = await res.json()
         if (!res.ok) throw new Error(data.message || "Failed to initialise checkout")
-        setClientSecret(data.clientSecret)
+
+        const normalizedSecret = normalizeClientSecret(data.clientSecret)
+        if (!normalizedSecret) throw new Error("Failed to initialise checkout")
+
+        setClientSecret(normalizedSecret)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to initialise checkout")
       }
