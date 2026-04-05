@@ -1,28 +1,91 @@
-/** NestJS returns PascalCase — normalise to the camelCase the client expects */
+import type { Profile } from "@/features/profiles/types/profile.types";
+import type { Session } from "@/types/session.types";
+import type { Device } from "@/types/session.types";
 
-export function normalizeSession(raw: any) {
-    const normalizeProfile = (p: any) => ({
-        id: p?.Id ?? p?.id ?? "",
-        userId: p?.UserId ?? p?.userId ?? "",
-        profileName: p?.ProfileName ?? p?.profileName ?? "",
-        profilePhotoUrl: p?.ProfilePhotoUrl ?? p?.profilePhotoUrl ?? "",
-        profileType: p?.ProfileType ?? p?.profileType ?? 0,
-        kidsProfile: p?.KidsProfile ?? p?.kidsProfile ?? false,
-    });
+type UnknownRecord = Record<string, unknown>;
 
-    const normalizeDevice = (d: any) => ({
-        deviceId: d?.DeviceId ?? d?.deviceId ?? "",
-        profileId: d?.ProfileId ?? d?.profileId ?? "",
-    });
+function asRecord(value: unknown): UnknownRecord | null {
+    return value !== null && typeof value === "object" ? (value as UnknownRecord) : null;
+}
+
+function asString(value: unknown, fallback = ""): string {
+    return typeof value === "string" ? value : fallback;
+}
+
+function asBoolean(value: unknown, fallback = false): boolean {
+    return typeof value === "boolean" ? value : fallback;
+}
+
+function normalizeProfile(value: unknown): Profile | null {
+    const record = asRecord(value);
+    if (!record) return null;
+
+    const id = asString(record.id ?? (record as any).Id);
+    if (!id) return null;
+
+    const profileType =
+        typeof record.profileType === "number"
+            ? record.profileType
+            : (typeof (record as any).ProfileType === "number" ? (record as any).ProfileType : 0);
 
     return {
-        sessionId: raw?.SessionId ?? raw?.sessionId ?? "",
-        userId: raw?.UserId ?? raw?.userId ?? "",
-        profiles: (raw?.Profiles ?? raw?.profiles ?? []).map(normalizeProfile),
-        connectedDevices: (raw?.ConnectedDevices ?? raw?.connectedDevices ?? []).map(normalizeDevice),
-        connectedDevicesCount: raw?.ConnectedDevicesCount ?? raw?.connectedDevicesCount ?? 0,
-        sessionJwtToken: raw?.SessionJwtToken ?? raw?.sessionJwtToken ?? null,
-        createdAt: raw?.CreatedAt ?? raw?.createdAt ?? "",
-        expiresAt: raw?.ExpiresAt ?? raw?.expiresAt ?? "",
+        id,
+        userId: asString(record.userId ?? (record as any).UserId),
+        profileName: asString(record.profileName ?? (record as any).ProfileName, "Profile"),
+        profilePhotoUrl: asString(record.profilePhotoUrl ?? (record as any).ProfilePhotoUrl),
+        profileType,
+        kidsProfile: asBoolean(record.kidsProfile ?? (record as any).KidsProfile),
+    };
+}
+
+function normalizeConnectedDevices(value: unknown): Device[] {
+    if (!Array.isArray(value)) return [];
+
+    return value
+        .map((entry) => {
+            const record = asRecord(entry);
+            if (!record) return null;
+
+            const deviceId = asString(record.deviceId ?? (record as any).DeviceId);
+            const profileId = asString(record.profileId ?? (record as any).ProfileId);
+
+            if (!deviceId || !profileId) return null;
+            return { deviceId, profileId };
+        })
+        .filter((entry): entry is NonNullable<typeof entry> => entry !== null);
+}
+
+function pickSessionPayload(raw: unknown): UnknownRecord {
+    const direct = asRecord(raw);
+    if (!direct) return {};
+
+    const data = asRecord(direct.data);
+    if (data) return data;
+
+    return direct;
+}
+
+export function normalizeSession(raw: unknown): Session {
+    const payload = pickSessionPayload(raw);
+
+    const profiles = Array.isArray(payload.profiles)
+        ? payload.profiles
+              .map(normalizeProfile)
+              .filter((profile): profile is Profile => profile !== null)
+        : [];
+
+    const connectedDevices = normalizeConnectedDevices(payload.connectedDevices);
+
+    return {
+        sessionId: asString(payload.sessionId ?? (payload as any).SessionId),
+        userId: asString(payload.userId ?? (payload as any).UserId),
+        profiles,
+        connectedDevices,
+        connectedDevicesCount:
+            typeof payload.connectedDevicesCount === "number"
+                ? payload.connectedDevicesCount
+                : connectedDevices.length,
+        createdAt: asString(payload.createdAt ?? (payload as any).CreatedAt),
+        expiresAt: asString(payload.expiresAt ?? (payload as any).ExpiresAt),
     };
 }

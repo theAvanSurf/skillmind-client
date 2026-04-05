@@ -33,12 +33,12 @@ httpClient.interceptors.request.use(
             config.headers.Authorization = `Bearer ${token}`;
         }
 
-        console.log("[httpClient] → REQUEST", {
-            method: config.method?.toUpperCase(),
-            url: `${config.baseURL}${config.url}`,
-            headers: config.headers,
-            data: config.data,
-        });
+        if (process.env.NODE_ENV === "development" && process.env.DEBUG_HTTP === "1") {
+            console.log("[httpClient] → REQUEST", {
+                method: config.method?.toUpperCase(),
+                url: `${config.baseURL}${config.url}`,
+            });
+        }
 
         return config;
     },

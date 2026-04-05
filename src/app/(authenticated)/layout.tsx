@@ -8,6 +8,8 @@ import { normalizeSession } from "@/app/api/sessions/normalizeSession";
 import type { Profile } from "@/features/profiles/types/profile.types";
 import type { Device } from "@/types/session.types";
 
+const SESSION_FETCH_TIMEOUT_MS = 1500;
+
 type Props = {
     children: ReactNode;
 };
@@ -27,21 +29,27 @@ export default async function Layout({ children }: Props) {
     let activeProfileId = cookieStore.get("activeProfileId")?.value ?? "";
 
     try {
-        const raw = await httpClient.get(
-            API_ENDPOINTS.SESSIONS.GET_USER_SESSION
-        ) as unknown;
-        const session = normalizeSession(raw);
+        const raw = await Promise.race<unknown | null>([
+            httpClient.get(API_ENDPOINTS.SESSIONS.GET_USER_SESSION) as Promise<unknown>,
+            new Promise<null>((resolve) =>
+                setTimeout(() => resolve(null), SESSION_FETCH_TIMEOUT_MS)
+            ),
+        ]);
 
-        profiles = session.profiles ?? [];
-        connectedDevices = session.connectedDevices ?? [];
+        if (raw) {
+            const session = normalizeSession(raw);
 
-        const activeProfile = activeProfileId
-            ? profiles.find((p) => p.id === activeProfileId)
-            : profiles[0];
+            profiles = session.profiles ?? [];
+            connectedDevices = session.connectedDevices ?? [];
 
-        if (activeProfile) {
-            profileName = activeProfile.profileName;
-            profileAvatar = activeProfile.profilePhotoUrl ?? null;
+            const activeProfile = activeProfileId
+                ? profiles.find((p) => p.id === activeProfileId)
+                : profiles[0];
+
+            if (activeProfile) {
+                profileName = activeProfile.profileName;
+                profileAvatar = activeProfile.profilePhotoUrl ?? null;
+            }
         }
     } catch {
         // Session fetch failed — fall back to defaults; layout still renders
