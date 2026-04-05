@@ -1,6 +1,6 @@
 "use client"
+import { useRouter } from "next/navigation";
 import { BookOpen, CheckCircle2, Flame, FolderOpen, TrendingUp } from "lucide-react";
-
 import CourseCard from "@/features/courses/components/course-card";
 import CourseStats from "@/features/courses/components/courses-stats";
 import type { CourseStatItem } from "@/types/course.types";
@@ -22,6 +22,8 @@ const statItemsWithIcons: CourseStatItem[] = statBase.map((item) => {
 });
 
 export default function DashboardPage() {
+  const router = useRouter();
+
   return (
     <div className="space-y-8">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -59,7 +61,11 @@ export default function DashboardPage() {
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {inProgressCourses.map((course) => (
-            <CourseCard key={course.title} {...course} />
+            <CourseCard
+              key={course.title}
+              {...course}
+              onClick={() => router.push(`/courses/${course.id}`)}
+            />
           ))}
         </div>
       </section>
@@ -74,7 +80,12 @@ export default function DashboardPage() {
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
           {completedCourses.map((course) => (
-            <CourseCard key={course.title} {...course} progress={100} />
+            <CourseCard
+              key={course.title}
+              {...course}
+              progress={100}
+              onClick={() => router.push(`/courses/${course.id}`)}
+            />
           ))}
         </div>
       </section>

@@ -21,6 +21,11 @@ export const API_ENDPOINTS = {
         CREATE_PORTAL_SESSION: '/payment/create-portal-session',
         SUBSCRIPTION: '/payment/subscription',
     },
+    COURSES: {
+    GET_BY_ID: (id: string) => `/courses/${id}`,
+    GET_RELATED: (id: string) => `/courses/${id}/related`,
+    UPDATE_PROGRESS: (id: string) => `/courses/${id}/progress`,
+    },
     PROFILES: {
         CREATE: '/profiles',
         UPDATE: (id: string) => `/profiles/${id}`,
