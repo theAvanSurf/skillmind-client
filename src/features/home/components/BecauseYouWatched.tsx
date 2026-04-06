@@ -7,9 +7,10 @@ type BYWData = typeof becauseYouWatched
 
 interface BecauseYouWatchedProps {
   data: BYWData
+  onCourseClick?: (courseId: string) => void
 }
 
-export default function BecauseYouWatched({ data }: BecauseYouWatchedProps) {
+export default function BecauseYouWatched({ data, onCourseClick }: BecauseYouWatchedProps) {
   return (
     <section>
       <div className="mb-4 flex items-center justify-between">
@@ -25,7 +26,7 @@ export default function BecauseYouWatched({ data }: BecauseYouWatchedProps) {
 
       <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-3 scrollbar-none">
         {data.recommendations.map((course, i) => (
-          <SquareCard key={course.id} {...course} index={i} />
+          <SquareCard key={course.id} {...course} index={i} onClick={onCourseClick} />
         ))}
       </div>
     </section>

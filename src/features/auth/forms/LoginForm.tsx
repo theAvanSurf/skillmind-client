@@ -4,36 +4,28 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useLogin } from "@/features/auth/hooks/useAuth";
+import type { LoginAPIResponse } from "@/features/auth/types/auth.types";
 
-const PENDING_PLAN_KEY = "skillmind:pendingPlan"
 
 const inputCls =
     "w-full rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition focus:border-blue-500/50 focus:bg-white/[0.09] focus:ring-2 focus:ring-blue-500/15";
 
-async function resolvePostLoginRoute(): Promise<string> {
+async function shouldGoToContinue(loginData: LoginAPIResponse): Promise<boolean> {
+    if (!loginData.hasProfiles || loginData.profilesCount === 0) {
+        return true;
+    }
+
     try {
-        // 1. Check server-side intendedPlan (survives browser close / device change)
-        const subRes = await fetch("/api/payment/subscription")
-        if (subRes.ok) {
-            const sub = await subRes.json()
-            if (sub?.intendedPlan) {
-                // User started checkout before — resume it
-                return "/register/billing"
-            }
-        }
+        const subRes = await fetch("/api/payment/subscription", { cache: "no-store" });
+        if (!subRes.ok) return false;
+
+        const sub = await subRes.json();
+        const status = typeof sub?.subscriptionStatus === "string" ? sub.subscriptionStatus.toLowerCase() : "";
+
+        return Boolean(sub?.intendedPlan) || status === "incomplete" || status === "past_due";
     } catch {
-        // subscription fetch failed — fall through to localStorage check
+        return false;
     }
-
-    // 2. Check localStorage pendingPlan (set during first-time registration)
-    const pendingPlan = localStorage.getItem(PENDING_PLAN_KEY)
-    localStorage.removeItem(PENDING_PLAN_KEY) // always clear immediately
-
-    if (pendingPlan === "pro" || pendingPlan === "premium") {
-        return "/register/billing"
-    }
-
-    return "/select-profile"
 }
 
 export default function LoginForm() {
@@ -48,9 +40,9 @@ export default function LoginForm() {
         login(
             { userName, password },
             {
-                onSuccess: async () => {
-                    const route = await resolvePostLoginRoute()
-                    router.push(route)
+                onSuccess: async (data) => {
+                    const continueFlow = await shouldGoToContinue(data);
+                    router.push(continueFlow ? "/continue" : "/main");
                 }
             }
         );

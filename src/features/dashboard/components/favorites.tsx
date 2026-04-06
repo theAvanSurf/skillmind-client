@@ -13,9 +13,10 @@ interface FavoriteCourse {
 interface FavoritesProps {
   title?: string
   favorites: FavoriteCourse[]
+  onCourseClick?: (courseId: string) => void
 }
 
-export default function Favorites({ title = "Your Favorites", favorites }: FavoritesProps) {
+export default function Favorites({ title = "Your Favorites", favorites, onCourseClick }: FavoritesProps) {
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-bold text-white">{title}</h2>
@@ -25,6 +26,15 @@ export default function Favorites({ title = "Your Favorites", favorites }: Favor
           <div
             key={course.id}
             className="group relative cursor-pointer rounded-xl border border-white/6 bg-[#1e1e2e] p-4 transition hover:border-white/10 hover:bg-[#22223a]"
+            onClick={() => onCourseClick?.(String(course.id))}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onCourseClick?.(String(course.id))
+              }
+            }}
           >
             {/* Favorite icon */}
             <button className="absolute right-3 top-3 text-rose-400 transition hover:scale-110">

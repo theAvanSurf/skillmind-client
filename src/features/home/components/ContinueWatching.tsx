@@ -8,7 +8,13 @@ import type { continueWatching } from "../mock-data"
 
 type CWCourse = (typeof continueWatching)[number]
 
-export function ProgressCard({ course }: { course: CWCourse }) {
+export function ProgressCard({
+  course,
+  onCourseClick,
+}: {
+  course: CWCourse
+  onCourseClick?: (courseId: string) => void
+}) {
   const [hovered, setHovered] = useState(false)
 
   return (
@@ -18,6 +24,15 @@ export function ProgressCard({ course }: { course: CWCourse }) {
       whileHover={{ scale: 1.03, y: -4 }}
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="relative aspect-video w-52 flex-none cursor-pointer overflow-hidden rounded-xl bg-white/5 ring-1 ring-white/8 sm:w-64 lg:w-72"
+      onClick={() => onCourseClick?.(course.id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          onCourseClick?.(course.id)
+        }
+      }}
     >
       {/* Thumbnail */}
       <img src={course.image} alt={course.title} className="h-full w-full object-cover" />
@@ -76,9 +91,10 @@ export function ProgressCard({ course }: { course: CWCourse }) {
 
 interface ContinueWatchingProps {
   courses: CWCourse[]
+  onCourseClick?: (courseId: string) => void
 }
 
-export default function ContinueWatching({ courses }: ContinueWatchingProps) {
+export default function ContinueWatching({ courses, onCourseClick }: ContinueWatchingProps) {
   return (
     <section>
       <div className="mb-4 flex items-center justify-between">
@@ -96,7 +112,7 @@ export default function ContinueWatching({ courses }: ContinueWatchingProps) {
             viewport={{ once: true, margin: "-40px" }}
             transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.07 }}
           >
-            <ProgressCard course={course} />
+            <ProgressCard course={course} onCourseClick={onCourseClick} />
           </motion.div>
         ))}
       </div>

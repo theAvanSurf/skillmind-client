@@ -9,6 +9,7 @@ export const statItems: Omit<CourseStatItem, "icon">[] = [
 
 export const inProgressCourses = [
   {
+    id: "1",
     title: "Advanced React Patterns",
     image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&w=1200&q=80",
     progress: 64,
@@ -17,6 +18,7 @@ export const inProgressCourses = [
     category: "Frontend",
   },
   {
+    id: "2",
     title: "TypeScript Essentials",
     image: "https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&w=1200&q=80",
     progress: 42,
@@ -25,6 +27,7 @@ export const inProgressCourses = [
     category: "Languages",
   },
   {
+    id: "3",
     title: "Node.js & REST APIs",
     image: "https://images.unsplash.com/photo-1558494949-ef010cbdcc31?auto=format&fit=crop&w=1200&q=80",
     progress: 21,
@@ -36,6 +39,7 @@ export const inProgressCourses = [
 
 export const completedCourses = [
   {
+    id: "4",
     title: "HTML & CSS Fundamentals",
     image: "https://images.unsplash.com/photo-1507721999472-8ed4421c4af2?auto=format&fit=crop&w=1200&q=80",
     progress: 100,
@@ -44,6 +48,7 @@ export const completedCourses = [
     category: "Web",
   },
   {
+    id: "5",
     title: "JavaScript Basics",
     image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1200&q=80",
     progress: 100,

@@ -13,6 +13,7 @@ interface RecommendationsProps {
   title?: string
   subtitle?: string
   courses: RecommendedCourse[]
+  onCourseClick?: (courseId: string) => void
 }
 
 const categoryColors: Record<string, string> = {
@@ -28,6 +29,7 @@ export default function Recommendations({
   title = "Recommended For You",
   subtitle,
   courses,
+  onCourseClick,
 }: RecommendationsProps) {
   return (
     <section className="space-y-4">
@@ -43,6 +45,15 @@ export default function Recommendations({
             <div
               key={course.id}
               className="group cursor-pointer rounded-xl border border-white/6 bg-[#1e1e2e] p-4 transition hover:border-white/10 hover:bg-[#22223a]"
+              onClick={() => onCourseClick?.(String(course.id))}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault()
+                  onCourseClick?.(String(course.id))
+                }
+              }}
             >
               <div className="mb-3 flex items-start justify-between gap-2">
                 <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${colorClass}`}>

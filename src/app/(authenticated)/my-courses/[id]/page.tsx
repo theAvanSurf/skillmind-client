@@ -1,80 +1,232 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
+import { ChevronRight, ChevronLeft } from "lucide-react";
 import { VideoPlayer } from "@/shared/video-player/VideoPlayer";
-
-
-// Cloudinary adaptive streaming: append sp_auto and change extension to .m3u8 (HLS)
-// Shaka Player will pick up multiple quality tracks automatically
-const CLOUDINARY_HLS =
-  "https://res.cloudinary.com/dgsfeis7x/video/upload/sp_auto/v1769999430/uploads/yfhx58pwpsoywx7lcrzf.m3u8";
-
-const continueData = [
-  {
-    id: 1,
-    title: "Advanced React Patterns",
-    description: "Aprende patrones avanzados de React usados en producción.",
-    duration: "45 mins",
-    videoUrl: CLOUDINARY_HLS,
-    seasonName: "Season 1 - React",
-    chapterName: "Hooks avanzados",
-    episodeNumber: 1,
-  },
-  {
-    id: 2,
-    title: "TypeScript Essentials",
-    description: "Domina TypeScript desde cero.",
-    duration: "30 mins",
-    videoUrl: CLOUDINARY_HLS,
-    seasonName: "Season 1 - TypeScript",
-    chapterName: "Tipos básicos",
-    episodeNumber: 2,
-  },
-];
+import {
+  fetchCourseDetails,
+  getNextLesson,
+  getPreviousLesson,
+  type CourseDetailsModel,
+} from "@/features/courses/services/course-details.service";
+import { getCourseById } from "@/features/courses/data/course-catalog";
 
 export default function CoursePlayerPage() {
-  const params = useParams();
-  const id = Number(params.id);
+  const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const id = params.id;
 
-  const course = continueData.find((c) => c.id === id);
+  const [courseDetails, setCourseDetails] = useState<CourseDetailsModel | null>(null);
+  const [seasonId, setSeasonId] = useState<string | null>(null);
+  const [lessonId, setLessonId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  if (!course) {
+  const selectedSeason = useMemo(() => {
+    if (!courseDetails || !seasonId) return null;
+    return courseDetails.seasons.find((s) => s.id === seasonId);
+  }, [courseDetails, seasonId]);
+
+  const selectedLesson = useMemo(() => {
+    if (!selectedSeason || !lessonId) return null;
+    return selectedSeason.lessons.find((l) => l.id === lessonId);
+  }, [selectedSeason, lessonId]);
+
+  const currentCourse = useMemo(() => getCourseById(id), [id]);
+
+  const nextChapter = useMemo(() => {
+    if (!courseDetails || !seasonId || !lessonId) return null;
+    return getNextLesson(courseDetails.seasons, seasonId, lessonId);
+  }, [courseDetails, seasonId, lessonId]);
+
+  const previousChapter = useMemo(() => {
+    if (!courseDetails || !seasonId || !lessonId) return null;
+    return getPreviousLesson(courseDetails.seasons, seasonId, lessonId);
+  }, [courseDetails, seasonId, lessonId]);
+
+  // Load course details and set initial season/lesson
+  useEffect(() => {
+    const loadCourse = async () => {
+      try {
+        const details = await fetchCourseDetails(id);
+        if (details) {
+          setCourseDetails(details);
+
+          // Get season and lesson from query params or use defaults
+          const paramSeason = searchParams.get("season");
+          const paramLesson = searchParams.get("lesson");
+
+          const season = paramSeason || details.seasons[0]?.id;
+          setSeasonId(season ?? null);
+
+          if (paramLesson) {
+            setLessonId(paramLesson);
+          } else {
+            const firstLesson = details.seasons
+              .find((s) => s.id === season)?.lessons[0];
+            setLessonId(firstLesson?.id ?? null);
+          }
+        }
+      } catch {
+        // Fallback if service fails
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    void loadCourse();
+  }, [id, searchParams]);
+
+  const handleAutoPlayNext = useCallback(() => {
+    if (nextChapter) {
+      router.push(`/my-courses/${id}?season=${nextChapter.seasonId}&lesson=${nextChapter.lessonId}`);
+    }
+  }, [nextChapter, id, router]);
+
+  const handlePlayNext = useCallback(() => {
+    if (nextChapter) {
+      router.push(`/my-courses/${id}?season=${nextChapter.seasonId}&lesson=${nextChapter.lessonId}`);
+    }
+  }, [nextChapter, id, router]);
+
+  const handlePlayPrevious = useCallback(() => {
+    if (previousChapter) {
+      router.push(`/my-courses/${id}?season=${previousChapter.seasonId}&lesson=${previousChapter.lessonId}`);
+    }
+  }, [previousChapter, id, router]);
+
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="h-96 bg-white/8 animate-pulse rounded-lg" />
+        <div className="h-8 bg-white/8 animate-pulse rounded w-1/2" />
+      </div>
+    );
+  }
+
+  if (!currentCourse) {
     return (
       <div className="p-6 text-white">
-        <h2 className="text-xl"> Curso no encontrado</h2>
+        <h2 className="text-xl">Course not found</h2>
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6">
-      {/*  VIDEO PLAYER */}
-      <VideoPlayer
-        videoUrl={course.videoUrl}
-        title={course.title}
-        description={course.description}
-        seasonName={course.seasonName}
-        chapterName={course.chapterName}
-        episodeNumber={course.episodeNumber}
-        storageKey={`course-${course.id}`}
-        onProgressUpdate={(progress, time) => {
-          console.log("Progress:", progress, "Time:", time);
-        }}
-      />
+      {/* VIDEO PLAYER */}
+      <div className="space-y-4">
+        <VideoPlayer
+          videoUrl={currentCourse.videoUrl}
+          title={selectedLesson?.title || currentCourse.title}
+          description={currentCourse.description}
+          seasonName={selectedSeason?.title || currentCourse.seasonName}
+          chapterName={selectedLesson?.title}
+          episodeNumber={selectedLesson ? 1 : undefined}
+          storageKey={`course-${currentCourse.id}`}
+          onProgressUpdate={(progress, time) => {
+            try {
+              localStorage.setItem(`course-progress:${currentCourse.id}`, String(progress));
+              localStorage.setItem(`course-last-time:${currentCourse.id}`, String(time));
+            } catch {
+              // Ignore storage write failures
+            }
+          }}
+          onEnded={nextChapter ? handleAutoPlayNext : undefined}
+        />
 
-      {/* INFO DEL CURSO */}
-      <div className="text-white space-y-2">
-        <h1 className="text-2xl font-bold">{course.title}</h1>
+        {/* CHAPTER NAVIGATION */}
+        <div className="flex items-center justify-between">
+          <button
+            onClick={handlePlayPrevious}
+            disabled={!previousChapter}
+            className="inline-flex items-center gap-2 rounded-lg bg-white/10 px-4 py-2 text-sm font-semibold text-white transition disabled:opacity-50 disabled:cursor-not-allowed hover:bg-white/18"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Previous
+          </button>
+
+          {nextChapter && (
+            <button
+              onClick={handlePlayNext}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600"
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* COURSE INFO */}
+      <div className="text-white space-y-4">
+        <div className="space-y-2">
+          <h1 className="text-2xl font-bold">{currentCourse.title}</h1>
+          {selectedSeason && (
+            <p className="text-base font-semibold text-blue-300">{selectedSeason.title}</p>
+          )}
+          {selectedLesson && (
+            <p className="text-sm text-white/70">{selectedLesson.title}</p>
+          )}
+        </div>
 
         <p className="text-white/70">
-          {course.description}
+          {currentCourse.description}
         </p>
 
-        <div className="text-sm text-white/50 flex gap-4">
-          <span> {course.duration}</span>
-          <span> {course.seasonName}</span>
-          <span> {course.chapterName}</span>
-        </div>
+        {courseDetails && (
+          <div className="space-y-6 border-t border-white/10 pt-6">
+            {/* SEASONS */}
+            <div>
+              <h2 className="text-lg font-semibold mb-4">Seasons</h2>
+              <div className="grid gap-3 max-h-96 overflow-y-auto">
+                {courseDetails.seasons.map((season, seasonIndex) => {
+                  const isSelectedSeason = season.id === seasonId;
+                  return (
+                    <div
+                      key={season.id}
+                      className={`rounded-lg border p-4 transition cursor-pointer ${
+                        isSelectedSeason
+                          ? "border-blue-400 bg-blue-500/15"
+                          : "border-white/10 bg-white/5 hover:bg-white/10"
+                      }`}
+                    >
+                      <p className="font-semibold text-white">{season.title}</p>
+                      <p className="text-xs text-white/60 mt-1">{season.lessons.length} lessons</p>
+                      {isSelectedSeason && (
+                        <div className="mt-3 space-y-2">
+                          {season.lessons.map((lesson, lessonIndex) => {
+                            const isSelected = lesson.id === lessonId;
+                            return (
+                              <button
+                                key={lesson.id}
+                                onClick={() => {
+                                  setSeasonId(season.id);
+                                  setLessonId(lesson.id);
+                                  router.push(
+                                    `/my-courses/${id}?season=${season.id}&lesson=${lesson.id}`
+                                  );
+                                }}
+                                className={`w-full text-left px-3 py-2 rounded text-sm transition ${
+                                  isSelected
+                                    ? "bg-blue-500 text-white font-semibold"
+                                    : "bg-white/10 text-white/80 hover:bg-white/18"
+                                }`}
+                              >
+                                {lessonIndex + 1}. {lesson.title}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

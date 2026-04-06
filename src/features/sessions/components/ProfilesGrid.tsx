@@ -149,7 +149,7 @@ export function ProfilesGrid() {
                 return;
             }
 
-            router.push("/dashboard");
+            router.push("/main");
         } catch {
             setOccupiedProfile(profile);
         } finally {

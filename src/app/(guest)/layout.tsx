@@ -19,7 +19,7 @@ export default function GuestLayout({ children }: Props) {
   const pathname = usePathname();
 
   const hideNav =
-    pathname === "/login" || pathname.startsWith("/register");
+    pathname === "/login" || pathname === "/continue" || pathname.startsWith("/register");
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_10%_10%,#eef2ff_0,transparent_28%),radial-gradient(circle_at_90%_15%,#cffafe_0,transparent_22%),#f8fafc] text-slate-900">
