@@ -6,7 +6,15 @@ import type { personalRecommendations } from "../mock-data"
 
 type Rec = (typeof personalRecommendations)[number]
 
-function RecommendationCard({ item, index }: { item: Rec; index: number }) {
+function RecommendationCard({
+  item,
+  index,
+  onCourseClick,
+}: {
+  item: Rec
+  index: number
+  onCourseClick?: (courseId: string) => void
+}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -15,6 +23,15 @@ function RecommendationCard({ item, index }: { item: Rec; index: number }) {
       transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.07 }}
       whileHover={{ scale: 1.04, y: -4 }}
       className="group relative w-36 flex-none cursor-pointer overflow-hidden rounded-xl bg-white/5 ring-1 ring-white/8 sm:w-44 lg:w-52"
+      onClick={() => onCourseClick?.(item.id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          onCourseClick?.(item.id)
+        }
+      }}
     >
       <div className="aspect-square w-full overflow-hidden">
         <img
@@ -47,9 +64,10 @@ function RecommendationCard({ item, index }: { item: Rec; index: number }) {
 
 interface RecommendationsProps {
   items: Rec[]
+  onCourseClick?: (courseId: string) => void
 }
 
-export default function Recommendations({ items }: RecommendationsProps) {
+export default function Recommendations({ items, onCourseClick }: RecommendationsProps) {
   return (
     <section>
       <div className="mb-4 flex items-center justify-between">
@@ -62,7 +80,7 @@ export default function Recommendations({ items }: RecommendationsProps) {
 
       <div className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-3 scrollbar-none">
         {items.map((item, i) => (
-          <RecommendationCard key={item.id} item={item} index={i} />
+          <RecommendationCard key={item.id} item={item} index={i} onCourseClick={onCourseClick} />
         ))}
       </div>
     </section>

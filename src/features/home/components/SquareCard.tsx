@@ -11,9 +11,10 @@ interface SquareCardProps {
   students: string
   image: string
   index?: number
+  onClick?: (courseId: string) => void
 }
 
-export function SquareCard({ title, category, rating, students, image, index = 0 }: SquareCardProps) {
+export function SquareCard({ id, title, category, rating, students, image, index = 0, onClick }: SquareCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -22,6 +23,15 @@ export function SquareCard({ title, category, rating, students, image, index = 0
       transition={{ duration: 0.4, ease: "easeOut", delay: index * 0.07 }}
       whileHover={{ scale: 1.04, y: -4 }}
       className="group relative w-36 flex-none cursor-pointer overflow-hidden rounded-xl bg-white/5 ring-1 ring-white/8 sm:w-44 lg:w-52"
+      onClick={() => onClick?.(id)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          onClick?.(id)
+        }
+      }}
     >
       {/* Square image */}
       <div className="aspect-square w-full overflow-hidden">

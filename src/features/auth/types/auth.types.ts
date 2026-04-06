@@ -10,6 +10,8 @@ export interface LoginAPIResponse {
     email: string;
     roles: string[];
     isVerified: boolean;
+    hasProfiles: boolean;
+    profilesCount: number;
     jwtToken: string;
     refreshToken: string;
 }
