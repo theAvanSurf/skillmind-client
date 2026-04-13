@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 import { Play, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { continueWatching } from "../mock-data"
+import { useRouter } from "next/navigation"
 
 type CWCourse = (typeof continueWatching)[number]
 
@@ -16,12 +17,13 @@ export function ProgressCard({
   onCourseClick?: (courseId: string) => void
 }) {
   const [hovered, setHovered] = useState(false)
-
+  const router = useRouter()
   return (
     <motion.div
       onHoverStart={() => setHovered(true)}
       onHoverEnd={() => setHovered(false)}
       whileHover={{ scale: 1.03, y: -4 }}
+      onClick={() => router.push(`/courses/${course.id}`)}
       transition={{ duration: 0.25, ease: "easeOut" }}
       className="relative aspect-video w-52 flex-none cursor-pointer overflow-hidden rounded-xl bg-white/5 ring-1 ring-white/8 sm:w-64 lg:w-72"
       onClick={() => onCourseClick?.(course.id)}
