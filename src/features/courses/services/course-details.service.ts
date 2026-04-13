@@ -1,4 +1,4 @@
-import { courseCatalog, getCourseById, type CourseCatalogItem } from "@/features/courses/data/course-catalog";
+import { httpClientBrowser } from "@/configurations/httpClientBrowser";
 
 export type CourseLesson = {
   id: string;
@@ -14,67 +14,28 @@ export type CourseSeason = {
   lessons: CourseLesson[];
 };
 
-export type CourseDetailsModel = CourseCatalogItem & {
+export type CourseDetailsModel = {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  category?: string;
+  tags?: string;
+  image: string;
+  progress: number;
+  videoUrl: string;
   seasons: CourseSeason[];
-  relatedCourses: CourseCatalogItem[];
+  relatedCourses: any[];
 };
 
 type FetchCourseDetailsOptions = {
   simulateFailure?: boolean;
 };
 
-function buildDefaultSeasons(course: CourseCatalogItem): CourseSeason[] {
-  const topic = course.category ?? "Core Skills";
-
-  return [
-    {
-      id: "s1",
-      title: "Season 1 - The Basics",
-      description: `Foundations and onboarding for ${topic}.`,
-      lessons: [
-        { id: `${course.id}-s1-l1`, title: `Welcome to ${course.title}`, duration: "8 mins", kind: "lesson" },
-        { id: `${course.id}-s1-l2`, title: `${topic} Core Concepts`, duration: "14 mins", kind: "lesson" },
-        { id: `${course.id}-s1-l3`, title: "Practice Checkpoint", duration: "11 mins", kind: "exercise" },
-      ],
-    },
-    {
-      id: "s2",
-      title: `Season 2 - Introduction to ${topic}`,
-      description: `Hands-on workflows and practical scenarios for ${topic}.`,
-      lessons: [
-        { id: `${course.id}-s2-l1`, title: "Real-World Walkthrough", duration: "18 mins", kind: "lesson" },
-        { id: `${course.id}-s2-l2`, title: "Guided Lab", duration: "22 mins", kind: "exercise" },
-        { id: `${course.id}-s2-l3`, title: "Common Pitfalls", duration: "12 mins", kind: "lesson" },
-      ],
-    },
-    {
-      id: "s3",
-      title: "Season 3 - Advanced Concepts",
-      description: "Optimization, scaling, and production-level best practices.",
-      lessons: [
-        { id: `${course.id}-s3-l1`, title: "Architecture Patterns", duration: "25 mins", kind: "lesson" },
-        { id: `${course.id}-s3-l2`, title: "Performance & Quality", duration: "20 mins", kind: "lesson" },
-        { id: `${course.id}-s3-l3`, title: "Capstone Challenge", duration: "30 mins", kind: "exercise" },
-      ],
-    },
-  ];
-}
-
-function buildRelatedCourses(source: CourseCatalogItem, max = 15): CourseCatalogItem[] {
-  const sameCategory = courseCatalog.filter(
-    (course) => course.id !== source.id && course.category === source.category
-  );
-  const rest = courseCatalog.filter(
-    (course) => course.id !== source.id && course.category !== source.category
-  );
-
-  return [...sameCategory, ...rest].slice(0, max);
-}
-
 export function resolveSeason(seasons: CourseSeason[], selectedSeasonId: string | null): CourseSeason {
   const fallback = seasons[0];
   if (!fallback) {
-    return { id: "empty", title: "Season", description: "No lessons available.", lessons: [] };
+    return { id: "empty", title: "Season", description: "This course has no seasons or lessons published yet.", lessons: [] };
   }
 
   if (!selectedSeasonId) return fallback;
@@ -174,15 +135,64 @@ export async function fetchCourseDetails(
     throw new Error("Unable to load course. Please try again.");
   }
 
-  const course = getCourseById(courseId);
-  if (!course) return null;
+  try {
+    const course = await httpClientBrowser.get(`/courses/${courseId}`) as any;
+    
+    const mappedSeasons: CourseSeason[] = (course.seasons || []).map((s: any) => ({
+      id: s.id,
+      title: s.title,
+      description: s.description || `${s.title} overview`,
+      lessons: (s.lessons || []).map((l: any) => ({
+        id: l.id,
+        title: l.title,
+        duration: Math.ceil((l.durationSeconds || 0) / 60) + " mins",
+        kind: "lesson"
+      }))
+    }));
 
-  const seasons = buildDefaultSeasons(course);
-  const relatedCourses = buildRelatedCourses(course, 15);
+    try {
+        const relatedRes = await httpClientBrowser.get(`/courses/${courseId}/related`) as any[];
+        const mappedRelated = (relatedRes || []).map((rc: any) => ({
+            id: rc.id,
+            title: rc.title,
+            description: rc.description || "",
+            duration: "N/A",
+            category: rc.category,
+            image: rc.thumbnailUrl,
+            progress: rc.progressPercent || 0,
+            videoUrl: ""
+        }));
+        
+        return {
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          duration: mappedSeasons.length > 0 ? `${mappedSeasons.length} seasons` : `0 seasons`,
+          category: course.category,
+          tags: course.tags,
+          image: course.thumbnailUrl,
+          progress: 0,
+          videoUrl: "",
+          seasons: mappedSeasons,
+          relatedCourses: mappedRelated,
+        };
+    } catch {
+        return {
+          id: course.id,
+          title: course.title,
+          description: course.description,
+          duration: mappedSeasons.length > 0 ? `${mappedSeasons.length} seasons` : `0 seasons`,
+          category: course.category,
+          tags: course.tags,
+          image: course.thumbnailUrl,
+          progress: 0,
+          videoUrl: "",
+          seasons: mappedSeasons,
+          relatedCourses: [],
+        };
+    }
 
-  return {
-    ...course,
-    seasons,
-    relatedCourses,
-  };
+  } catch (err) {
+    return null;
+  }
 }

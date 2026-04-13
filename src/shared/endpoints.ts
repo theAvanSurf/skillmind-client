@@ -30,5 +30,10 @@ export const API_ENDPOINTS = {
         CREATE: '/profiles',
         UPDATE: (id: string) => `/profiles/${id}`,
         DELETE: (id: string) => `/profiles/${id}`,
+    },
+    RECOMMENDATIONS: {
+        GET: (profileId: string) => `/recommendations/${profileId}`,
+        TRACK: '/recommendations/events/track',
+        TRENDING: '/recommendations/trending/courses'
     }
 }

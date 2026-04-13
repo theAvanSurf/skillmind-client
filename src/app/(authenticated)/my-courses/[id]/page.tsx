@@ -10,7 +10,6 @@ import {
   getPreviousLesson,
   type CourseDetailsModel,
 } from "@/features/courses/services/course-details.service";
-import { getCourseById } from "@/features/courses/data/course-catalog";
 
 export default function CoursePlayerPage() {
   const params = useParams<{ id: string }>();
@@ -33,7 +32,6 @@ export default function CoursePlayerPage() {
     return selectedSeason.lessons.find((l) => l.id === lessonId);
   }, [selectedSeason, lessonId]);
 
-  const currentCourse = useMemo(() => getCourseById(id), [id]);
 
   const nextChapter = useMemo(() => {
     if (!courseDetails || !seasonId || !lessonId) return null;
@@ -105,7 +103,7 @@ export default function CoursePlayerPage() {
     );
   }
 
-  if (!currentCourse) {
+  if (!courseDetails) {
     return (
       <div className="p-6 text-white">
         <h2 className="text-xl">Course not found</h2>
@@ -118,17 +116,17 @@ export default function CoursePlayerPage() {
       {/* VIDEO PLAYER */}
       <div className="space-y-4">
         <VideoPlayer
-          videoUrl={currentCourse.videoUrl}
-          title={selectedLesson?.title || currentCourse.title}
-          description={currentCourse.description}
-          seasonName={selectedSeason?.title || currentCourse.seasonName}
+          videoUrl={selectedLesson?.videoUrl || courseDetails.videoUrl || ""}
+          title={selectedLesson?.title || courseDetails.title}
+          description={courseDetails.description}
+          seasonName={selectedSeason?.title}
           chapterName={selectedLesson?.title}
           episodeNumber={selectedLesson ? 1 : undefined}
-          storageKey={`course-${currentCourse.id}`}
+          storageKey={`course-${courseDetails.id}`}
           onProgressUpdate={(progress, time) => {
             try {
-              localStorage.setItem(`course-progress:${currentCourse.id}`, String(progress));
-              localStorage.setItem(`course-last-time:${currentCourse.id}`, String(time));
+              localStorage.setItem(`course-progress:${courseDetails.id}`, String(progress));
+              localStorage.setItem(`course-last-time:${courseDetails.id}`, String(time));
             } catch {
               // Ignore storage write failures
             }
@@ -162,7 +160,7 @@ export default function CoursePlayerPage() {
       {/* COURSE INFO */}
       <div className="text-white space-y-4">
         <div className="space-y-2">
-          <h1 className="text-2xl font-bold">{currentCourse.title}</h1>
+          <h1 className="text-2xl font-bold">{courseDetails.title}</h1>
           {selectedSeason && (
             <p className="text-base font-semibold text-blue-300">{selectedSeason.title}</p>
           )}
@@ -171,9 +169,7 @@ export default function CoursePlayerPage() {
           )}
         </div>
 
-        <p className="text-white/70">
-          {currentCourse.description}
-        </p>
+        <p className="text-white/70">{courseDetails.description}</p>
 
         {courseDetails && (
           <div className="space-y-6 border-t border-white/10 pt-6">
