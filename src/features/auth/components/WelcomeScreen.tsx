@@ -49,7 +49,7 @@ export default function WelcomeScreen() {
 
         <button
           type="button"
-          onClick={() => router.push("/dashboard")}
+          onClick={() => router.push("/main")}
           className="mt-10 rounded-xl bg-linear-to-r from-blue-500 to-blue-600 px-10 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/50"
         >
           Start Exploring Courses! :)

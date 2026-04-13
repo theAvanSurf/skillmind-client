@@ -12,12 +12,14 @@ interface ContinueLearningProps {
   title?: string
   subtitle?: string
   courses: Course[]
+  onCourseClick?: (courseId: string) => void
 }
 
 export default function ContinueLearning({
   title = "Continue Learning",
   subtitle,
   courses,
+  onCourseClick,
 }: ContinueLearningProps) {
   return (
     <section className="space-y-4">
@@ -31,6 +33,15 @@ export default function ContinueLearning({
           <div
             key={course.id}
             className="group flex items-center gap-4 rounded-xl border border-white/6 bg-[#1e1e2e] p-4 transition hover:border-white/10 hover:bg-[#22223a]"
+            onClick={() => onCourseClick?.(String(course.id))}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault()
+                onCourseClick?.(String(course.id))
+              }
+            }}
           >
             {/* Play button */}
             <button className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600/20 text-blue-400 transition group-hover:bg-blue-600 group-hover:text-white">

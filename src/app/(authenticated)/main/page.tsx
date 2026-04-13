@@ -1,3 +1,6 @@
+"use client"
+
+import { useRouter } from "next/navigation"
 import HeroBanner from "@/features/home/components/HeroBanner"
 import CategoryCards from "@/features/home/components/CategoryCards"
 import ContinueWatching from "@/features/home/components/ContinueWatching"
@@ -14,6 +17,11 @@ import {
 } from "@/features/home/mock-data"
 
 export default function MainPage() {
+  const router = useRouter()
+  const goToCourseDetails = (courseId: string) => {
+    router.push(`/courses/${courseId}`)
+  }
+
   return (
     <main className="min-h-screen w-full">
       {/* Hero: full-viewport bleed from within the constrained layout */}
@@ -22,9 +30,9 @@ export default function MainPage() {
       </div>
       <div className="mx-auto max-w-360 space-y-8 px-4 py-8 sm:px-6 lg:px-10 sm:space-y-10 sm:py-10">
         <CategoryCards categories={categories} />
-        <ContinueWatching courses={continueWatching} />
-        <BecauseYouWatched data={becauseYouWatched} />
-        <Recommendations items={personalRecommendations} />
+        <ContinueWatching courses={continueWatching} onCourseClick={goToCourseDetails} />
+        <BecauseYouWatched data={becauseYouWatched} onCourseClick={goToCourseDetails} />
+        <Recommendations items={personalRecommendations} onCourseClick={goToCourseDetails} />
         <MotivationalTips tips={motivationalTips} />
       </div>
     </main>

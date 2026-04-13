@@ -1,4 +1,5 @@
 'use client'
+import { useRouter } from "next/navigation";
 import CoursePromo from "@/features/dashboard/components/course-promo";
 import ContinueLearning from "@/features/dashboard/components/continue-learning";
 import Recommendations from "@/features/dashboard/components/recommendations";
@@ -23,6 +24,11 @@ const favoritesData = [
 ];
 
 export default function MyCoursesPage() {
+  const router = useRouter();
+  const goToCourseDetails = (courseId: string) => {
+    router.push(`/courses/${courseId}`);
+  };
+
   return (
     <div className="space-y-10">
       <header className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -55,17 +61,20 @@ export default function MyCoursesPage() {
         title="Continue Learning"
         subtitle="Finish what you started"
         courses={continueData}
+        onCourseClick={goToCourseDetails}
       />
 
       <Recommendations
         title="Recommended For You"
         subtitle="Based on your learning history"
         courses={recommendationsData}
+        onCourseClick={goToCourseDetails}
       />
 
       <Favorites
         title="Your Favorite Courses"
         favorites={favoritesData}
+        onCourseClick={goToCourseDetails}
       />
     </div>
   );
