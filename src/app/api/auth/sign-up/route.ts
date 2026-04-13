@@ -15,10 +15,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         return NextResponse.json(response, { status: 201 });
     } catch (err) {
         if (axios.isAxiosError(err)) {
-            const status = Number(err.code) || 400;
+            const status = err.response?.status || 400;
             return NextResponse.json(
-                { message: err.message },
-                { status: status >= 100 && status < 600 ? status : 400 }
+                err.response?.data || { message: err.message },
+                { status }
             );
         }
         const message = err instanceof Error ? err.message : "Internal Server Error";

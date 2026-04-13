@@ -2,9 +2,10 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { ChevronDown, UserCircle2 } from "lucide-react"
+import { ChevronDown, UserCircle2, LogOut } from "lucide-react"
 import type { Profile } from "@/features/profiles/types/profile.types"
 import type { Device } from "@/types/session.types"
+import { useSignOut } from "@/features/auth/hooks/useSignOut"
 
 type Props = {
   initialName?: string
@@ -26,6 +27,7 @@ export function ProfileSwitcher({
   transition = "none",
 }: Props) {
   const [open, setOpen] = useState(false)
+  const { signOut, isLoading: isSigningOut } = useSignOut()
 
   const activeProfile = useMemo(() => {
     if (!initialProfiles.length) {
@@ -120,13 +122,30 @@ export function ProfileSwitcher({
             })
           )}
 
-          <Link
-            href="/select-profile"
-            className="mt-1 block rounded-xl border border-white/10 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-white/75 transition hover:bg-white/8 hover:text-white"
-            onClick={() => setOpen(false)}
-          >
-            Manage Profiles
-          </Link>
+          <div className="mt-2 flex flex-col gap-1">
+            <Link
+              href="/select-profile"
+              className="block rounded-xl border border-white/10 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-white/75 transition hover:bg-white/8 hover:text-white"
+              onClick={() => setOpen(false)}
+            >
+              Manage Profiles
+            </Link>
+            <Link
+              href="/settings"
+              className="block rounded-xl border border-white/10 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-white/75 transition hover:bg-white/8 hover:text-white"
+              onClick={() => setOpen(false)}
+            >
+              Settings
+            </Link>
+            <button
+              onClick={() => { setOpen(false); void signOut(); }}
+              disabled={isSigningOut}
+              className="flex items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/8 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-red-400 transition hover:bg-red-500/18 hover:text-red-300 disabled:opacity-50"
+            >
+              <LogOut size={13} />
+              {isSigningOut ? "Signing out…" : "Sign Out"}
+            </button>
+          </div>
         </div>
       )}
     </div>

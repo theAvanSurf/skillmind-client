@@ -25,6 +25,14 @@ export const httpClientBrowser = axios.create({
 httpClientBrowser.interceptors.response.use(
     (response) => response.data,
     (error: AxiosError<ErrorResponseData>) => {
+        if (error.response?.status === 401) {
+            if (typeof window !== "undefined") {
+                // Clear active profile when logging out
+                document.cookie = "activeProfileId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                window.location.href = "/login";
+            }
+        }
+
         const message = error.response?.data
             ? extractMessage(error.response.data)
             : error.message ?? "Internal Server Error";

@@ -4,7 +4,6 @@ enum AccountTypes{
 }
 
 enum Roles {
-  Professor = 0,
   Admin = 1,
   Student = 2
 }

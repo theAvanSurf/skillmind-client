@@ -300,7 +300,7 @@ export default function ProfilesStep() {
           </label>
           <div className="relative">
             <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-white/15 bg-white/6">
-              <img src={draftAvatar} alt="Selected avatar" className="h-full w-full object-cover" />
+              <img src={draftAvatar || undefined} alt="Selected avatar" className="h-full w-full object-cover" />
             </div>
             <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 shadow-lg ring-2 ring-[#0a0a0f]">
               <Pencil size={11} className="text-white" />

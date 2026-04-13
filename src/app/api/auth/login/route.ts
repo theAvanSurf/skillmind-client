@@ -10,7 +10,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const response = await httpClient.post<LoginAPIResponse>(API_ENDPOINTS.AUTH.LOGIN, body) as unknown as LoginAPIResponse;
 
         const res = NextResponse.json(response, { status: 200 });
-        const userRole = response.roles?.find((role) => role.toLowerCase() === "professor");
 
         res.cookies.set("token", response.jwtToken, {
             httpOnly: true,
@@ -20,28 +19,16 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             path: "/",
         });
 
-        if (userRole) {
-            res.cookies.set("userRole", userRole.toLowerCase(), {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production",
-                sameSite: "strict",
-                maxAge: 60 * 60 * 24 * 7,
-                path: "/",
-            });
-        } else {
-            res.cookies.set("userRole", "", { maxAge: 0, path: "/" });
-        }
-
         return res;
     } catch (err) {
         console.error("Login error type:", Object.prototype.toString.call(err));
         console.error("Login error:", err);
 
         if (axios.isAxiosError(err)) {
-            const status = Number(err.code) || 500;
+            const status = err.response?.status || 500;
             return NextResponse.json(
-                { message: err.message },
-                { status: status >= 100 && status < 600 ? status : 500 }
+                err.response?.data || { message: err.message },
+                { status }
             );
         }
 
