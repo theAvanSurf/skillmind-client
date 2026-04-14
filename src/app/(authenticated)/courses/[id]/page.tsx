@@ -287,7 +287,7 @@ export default function CourseDetailsPage() {
       {/* ── HERO ────────────────────────────────────────────────────────── */}
       <div className="relative h-[min(60vw,540px)] w-full overflow-hidden bg-black">
         <img
-          src={course.image}
+          src={course.image || undefined}
           alt={course.title}
           className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
         />
@@ -456,7 +456,7 @@ export default function CourseDetailsPage() {
                         >
                           <div className="relative aspect-video overflow-hidden bg-black/40">
                             <img
-                              src={course.image}
+                              src={course.image || undefined}
                               alt={lesson.title}
                               className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
                             />
@@ -497,7 +497,7 @@ export default function CourseDetailsPage() {
                   onClick={() => router.push(`/courses/${rc.id}`)}
                   className="group overflow-hidden rounded-xl border border-white/8 bg-white/4 text-left transition hover:-translate-y-1 hover:border-white/20"
                 >
-                  <img src={rc.image} alt={rc.title} className="aspect-video w-full object-cover" />
+                  <img src={rc.image || undefined} alt={rc.title} className="aspect-video w-full object-cover" />
                   <div className="p-2.5">
                     {rc.category && (
                       <p className="text-[0.6rem] font-bold uppercase tracking-wider text-blue-300">{rc.category}</p>

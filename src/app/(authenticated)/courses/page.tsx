@@ -282,8 +282,8 @@ export default function CoursesPage() {
   return (
     <div className="min-h-full space-y-8 pb-16">
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div className="relative pt-10 pb-8 text-center overflow-hidden">
-        <div className="absolute inset-0 -z-10 opacity-30">
+      <div className="relative pt-10 pb-8 text-center">
+        <div className="absolute inset-0 -z-10 opacity-30 overflow-hidden">
           <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full bg-blue-600/20 blur-3xl" />
           <div className="absolute top-4 right-1/4 w-72 h-72 rounded-full bg-purple-600/15 blur-3xl" />
         </div>

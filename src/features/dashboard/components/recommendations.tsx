@@ -3,7 +3,7 @@
 import { Clock, BookOpen } from "lucide-react"
 
 interface RecommendedCourse {
-  id: number
+  id: string
   title: string
   duration: string
   category: string

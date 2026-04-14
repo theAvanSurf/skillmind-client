@@ -31,6 +31,7 @@ type PlayerState =
   | "playing"
   | "buffering"
   | "error"
+  | "processing"
   | "ended";
 
 interface QualityTrack {
@@ -200,6 +201,24 @@ export function VideoPlayer({
           bufferingGoal: 10,
           rebufferingGoal: 2,
           bufferBehind: 30,
+          // Fail fast on bad segments instead of retrying forever
+          retryParameters: {
+            maxAttempts: 2,
+            baseDelay: 500,
+            backoffFactor: 2,
+            fuzzFactor: 0.5,
+            timeout: 15_000,
+          },
+        },
+        manifest: {
+          // Only try the manifest once — if it's 423 we want to fail fast
+          retryParameters: {
+            maxAttempts: 1,
+            baseDelay: 0,
+            backoffFactor: 1,
+            fuzzFactor: 0,
+            timeout: 15_000,
+          },
         },
       });
 
@@ -209,6 +228,11 @@ export function VideoPlayer({
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       player.addEventListener("error", (e: any) => {
         if (cancelled) return;
+        // HTTP 423 = Cloudinary still transcoding — show processing state
+        if (e.detail?.code === 1001 && e.detail?.data?.[1] === 423) {
+          setPlayerState("processing");
+          return;
+        }
         console.error("[Shaka] Error:", e.detail);
         setError("A streaming error occurred. Please try again.");
         setPlayerState("error");
@@ -223,6 +247,25 @@ export function VideoPlayer({
           setPlayerState(video.paused ? "ready" : "playing");
         }
       });
+
+      // Pre-check via server-side proxy to avoid CORS hiding the real status.
+      // A direct browser fetch of a Cloudinary 423 response may be blocked by
+      // CORS, making the status invisible. The /api/check-video route fetches
+      // server-side where CORS doesn't apply.
+      try {
+        const pre = await fetch(
+          `/api/check-video?url=${encodeURIComponent(videoUrl)}`,
+          { cache: "no-store" }
+        );
+        const { status } = await pre.json() as { status: number };
+        if (status === 423) {
+          if (!cancelled) setPlayerState("processing");
+          return;
+        }
+      } catch {
+        // Proxy unavailable — let Shaka attempt the load and fail fast
+      }
+      if (cancelled) return;
 
       try {
         await player.load(videoUrl);
@@ -240,8 +283,14 @@ export function VideoPlayer({
         setQualityTracks(
           unique.map((t) => ({ id: t.id, height: t.height, bandwidth: t.bandwidth }))
         );
-      } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
         if (cancelled) return;
+        // HTTP 423 = Cloudinary still transcoding — show processing state
+        if (err?.code === 1001 && err?.data?.[1] === 423) {
+          setPlayerState("processing");
+          return;
+        }
         console.error("[Shaka] Load failed:", err);
         setError("Could not load the video stream. Please check the URL.");
         setPlayerState("error");
@@ -275,6 +324,13 @@ export function VideoPlayer({
     }, SAVE_INTERVAL_MS);
     return () => clearInterval(id);
   }, [isPlaying, progressKey]);
+
+  // ── Auto-retry when Cloudinary is still processing (423) ──────────────────
+  useEffect(() => {
+    if (playerState !== "processing") return;
+    const id = setTimeout(() => setInitKey((k) => k + 1), 10_000);
+    return () => clearTimeout(id);
+  }, [playerState, initKey]);
 
   // ── Controls auto-hide ─────────────────────────────────────────────────────
   const scheduleHide = useCallback(() => {
@@ -485,7 +541,7 @@ export function VideoPlayer({
         className="w-full h-full object-contain"
         playsInline
         preload="metadata"
-        src={adaptive ? undefined : videoUrl}
+        src={adaptive ? undefined : (videoUrl || undefined)}
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
         onCanPlay={handleCanPlay}
@@ -502,6 +558,17 @@ export function VideoPlayer({
       {showSpinner && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none transition-opacity duration-200">
           <Spinner size={52} />
+        </div>
+      )}
+
+      {/* ── Processing overlay (Cloudinary 423) ── */}
+      {playerState === "processing" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-40 gap-4 p-6 text-center">
+          <Spinner size={40} />
+          <p className="text-white text-sm font-semibold">Video is being processed</p>
+          <p className="text-white/40 text-xs max-w-xs leading-relaxed">
+            This usually takes a moment. Retrying automatically…
+          </p>
         </div>
       )}
 

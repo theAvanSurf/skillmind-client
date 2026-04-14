@@ -40,6 +40,20 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Handle 401 Unauthorized globally for professor services
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      if (typeof window !== "undefined") {
+        document.cookie = "activeProfileId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+        window.location.href = "/login";
+      }
+    }
+    return Promise.reject(error);
+  }
+)
+
 // ── Profile ───────────────────────────────────────────────────────────────────
 
 export async function getMyProfile(): Promise<ProfessorProfile> {

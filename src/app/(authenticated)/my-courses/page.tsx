@@ -1,33 +1,28 @@
 'use client'
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import CoursePromo from "@/features/dashboard/components/course-promo";
-import ContinueLearning from "@/features/dashboard/components/continue-learning";
 import Recommendations from "@/features/dashboard/components/recommendations";
-import Favorites from "@/features/dashboard/components/favorites";
-
-const continueData = [
-  { id: 1, title: "Advanced React Patterns", duration: "45 mins" },
-  { id: 2, title: "TypeScript Essentials", duration: "30 mins" },
-  { id: 3, title: "Web Performance Optimization", duration: "1 hour" },
-];
-
-const recommendationsData = [
-  { id: 1, title: "Next.js Full Stack Development", duration: "15 hours", category: "Frontend" },
-  { id: 2, title: "GraphQL for Beginners", duration: "12 hours", category: "Backend" },
-  { id: 3, title: "UI/UX Design Principles", duration: "10 hours", category: "Design" },
-];
-
-const favoritesData = [
-  { id: 1, title: "Building Scalable APIs", instructor: "John Smith", duration: "20 hours", isFavorite: true },
-  { id: 2, title: "Mobile App Development", instructor: "Sarah Johnson", duration: "25 hours", isFavorite: true },
-  { id: 3, title: "Cloud Computing Fundamentals", instructor: "Mike Chen", duration: "18 hours", isFavorite: true },
-];
+import { browseCourses } from "@/features/courses/services/browse-courses.service";
 
 export default function MyCoursesPage() {
   const router = useRouter();
+
+  const { data: browsed } = useQuery({
+    queryKey: ["courses", "browse", "my-courses"],
+    queryFn: () => browseCourses({ pageSize: 6, sort: "newest" }),
+  });
+
   const goToCourseDetails = (courseId: string) => {
     router.push(`/courses/${courseId}`);
   };
+
+  const recommendationsData = (browsed?.courses ?? []).map((c) => ({
+    id: c.id,
+    title: c.title,
+    duration: `${c.totalLessons} ${c.totalLessons === 1 ? "lesson" : "lessons"}`,
+    category: c.category ?? "General",
+  }));
 
   return (
     <div className="space-y-10">
@@ -57,25 +52,14 @@ export default function MyCoursesPage() {
         badgeText="Limited Time"
       />
 
-      <ContinueLearning
-        title="Continue Learning"
-        subtitle="Finish what you started"
-        courses={continueData}
-        onCourseClick={goToCourseDetails}
-      />
-
-      <Recommendations
-        title="Recommended For You"
-        subtitle="Based on your learning history"
-        courses={recommendationsData}
-        onCourseClick={goToCourseDetails}
-      />
-
-      <Favorites
-        title="Your Favorite Courses"
-        favorites={favoritesData}
-        onCourseClick={goToCourseDetails}
-      />
+      {recommendationsData.length > 0 && (
+        <Recommendations
+          title="Recommended For You"
+          subtitle="Based on your learning history"
+          courses={recommendationsData}
+          onCourseClick={goToCourseDetails}
+        />
+      )}
     </div>
   );
 }

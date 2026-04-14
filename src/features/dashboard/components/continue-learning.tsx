@@ -3,7 +3,7 @@
 import { Play, Clock } from "lucide-react"
 
 interface Course {
-  id: number
+  id: string
   title: string
   duration: string
 }

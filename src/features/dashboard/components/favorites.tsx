@@ -3,7 +3,7 @@
 import { Heart, Clock, User } from "lucide-react"
 
 interface FavoriteCourse {
-  id: number
+  id: string
   title: string
   instructor: string
   duration: string
