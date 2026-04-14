@@ -4,6 +4,7 @@ enum AccountTypes{
 }
 
 enum Roles {
+  Professor = 0,
   Admin = 1,
   Student = 2
 }
@@ -28,12 +29,18 @@ export interface RegistrationDraft {
   birthDate: string;
   phone: string;
   country: string;
-  // Step 2 — account info
+  // Step 2 — account info + role
   email: string;
   password: string;
   userName: string;
-  // Step 3 — plan
+  role: "student" | "professor";
+  // Step 3 — plan (student only)
   plan: "free" | "premium" | null;
+  // Professor-only steps
+  bio?: string;
+  expertise?: string;
+  yearsOfExperience?: number;
+  linkedInUrl?: string;
 }
 
 export interface SignUpData  {

@@ -4,7 +4,7 @@ import React, { useState } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, GraduationCap, BookOpen } from "lucide-react"
 import { useRouter } from "next/navigation"
 import AuthLayout from "../components/AuthLayout"
 import { useRegistrationGuard } from "../hooks/useRegistrationGuard"
@@ -52,6 +52,35 @@ function getStrength(pw: string) {
   return s
 }
 
+function RoleOption({
+  value,
+  active,
+  icon: Icon,
+  label,
+  onClick,
+}: {
+  value: "student" | "professor"
+  active: boolean
+  icon: React.ElementType
+  label: string
+  onClick: () => void
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-2.5 rounded-xl border-2 px-4 py-3 text-sm font-semibold transition-all ${
+        active
+          ? "border-blue-500/60 bg-blue-500/10 text-white"
+          : "border-white/10 bg-white/3 text-white/50 hover:border-white/20 hover:text-white/70"
+      }`}
+    >
+      <Icon size={16} className={active ? "text-blue-400" : "text-white/30"} />
+      {label}
+    </button>
+  )
+}
+
 const field = (error?: boolean) =>
   `w-full rounded-xl border px-4 py-3 text-sm text-white placeholder-white/25 outline-none transition bg-white/[0.06] focus:bg-white/[0.09] focus:ring-2 ${
     error
@@ -64,9 +93,10 @@ export default function AccountInfoStep() {
   const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
   const setRegistrationDraft = createUserStorage((s) => s.setRegistrationDraft)
   const draft = createUserStorage((s) => s.registrationDraft)
-  const allowed = useRegistrationGuard(1)
+  useRegistrationGuard(1)
   const [showPw, setShowPw] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
+  const [role, setRole] = useState<"student" | "professor">(draft.role ?? "student")
 
   const {
     register,
@@ -95,10 +125,33 @@ export default function AccountInfoStep() {
         <p className="mt-1 text-xs text-white/40">Set up your login credentials</p>
       </div>
 
+      {/* Role toggle */}
+      <div className="mb-5">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-widest text-white/35">I am joining as</p>
+        <div className="grid grid-cols-2 gap-2">
+          <RoleOption value="student" active={role === "student"} icon={BookOpen} label="Student" onClick={() => setRole("student")} />
+          <RoleOption value="professor" active={role === "professor"} icon={GraduationCap} label="Professor" onClick={() => setRole("professor")} />
+        </div>
+        {role === "professor" && (
+          <p className="mt-2 text-[11px] text-white/35">
+            Professors create and sell courses — no subscription required.
+          </p>
+        )}
+      </div>
+
       <form onSubmit={handleSubmit((data) => {
-        setRegistrationDraft({ email: data.email, userName: data.userName, password: data.password })
+        setRegistrationDraft({
+          email: data.email,
+          userName: data.userName,
+          password: data.password,
+          role,
+        })
         setCompletedStep(2)
-        router.push("/register/step3")
+        if (role === "professor") {
+          router.push("/register/professor-info")
+        } else {
+          router.push("/register/step3")
+        }
       })} className="space-y-3" noValidate>
         {/* Email */}
         <div>

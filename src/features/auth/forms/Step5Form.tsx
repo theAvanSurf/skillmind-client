@@ -107,6 +107,31 @@ export default function VerificationStep() {
         password: draft.password ?? "",
       })
 
+      // Professor: create the domain profile BEFORE committing local state.
+      // If this fails, localStorage has no stale token/user.
+      if (draft.role === "professor") {
+        try {
+          await authServices.createProfessorProfile(
+            {
+              bio: draft.bio ?? "",
+              expertise: draft.expertise ?? "",
+              yearsOfExperience: draft.yearsOfExperience ?? 0,
+              linkedInUrl: draft.linkedInUrl ?? "",
+            },
+            loginResponse.jwtToken
+          )
+        } catch (profileErr) {
+          const msg = profileErr instanceof Error
+            ? profileErr.message
+            : "Could not create professor profile. Please contact support."
+          setError(msg)
+          setShake(true)
+          setTimeout(() => setShake(false), 600)
+          return
+        }
+      }
+
+      // Commit token + user only after all backend work succeeds
       setToken(loginResponse.jwtToken)
       setUser({
         name: loginResponse.name,
@@ -118,10 +143,16 @@ export default function VerificationStep() {
         phoneNumber: draft.phone ?? "",
         country: draft.country ?? "",
         accountTypes: draft.plan === "premium" ? 1 : 0,
-        role: 2,
+        role: draft.role === "professor" ? 0 : 2,
       })
 
-      // Premium users go to billing (needs auth token); free users skip to profiles
+      if (draft.role === "professor") {
+        setCompletedStep(6)
+        router.push("/register/welcome")
+        return
+      }
+
+      // Student: premium → billing, free → profiles
       if (draft.plan === "premium") {
         setCompletedStep(4)
         router.push("/register/billing")

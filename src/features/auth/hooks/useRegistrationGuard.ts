@@ -4,15 +4,22 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { createUserStorage } from "@/store/create-user-storage"
 
-/** Maps each completedStep value to the route the user should be picked up at. */
-export const RESUME_ROUTE: Record<number, string> = {
-  0: "/register",
-  1: "/register/step2",
-  2: "/register/step3",
-  3: "/register/step5",
-  4: "/register/billing",   // premium: after email verify
-  5: "/register/profiles", // free: after email verify; premium: after billing
-  6: "/register/welcome",
+/** Returns the correct resume route based on completed step and role. */
+export function getResumeRoute(completedStep: number, role?: string | null): string {
+  // Professor-specific branching at step 2
+  if (completedStep === 2 && role === "professor") return "/register/professor-info"
+
+  const map: Record<number, string> = {
+    0: "/register",
+    1: "/register/step2",
+    2: "/register/step3",
+    7: "/register/stripe-connect",
+    3: "/register/step5",
+    4: "/register/billing",
+    5: "/register/profiles",
+    6: "/register/welcome",
+  }
+  return map[completedStep] ?? "/register"
 }
 
 /**
@@ -24,16 +31,17 @@ export const RESUME_ROUTE: Record<number, string> = {
 export function useRegistrationGuard(requiredStep: number, isEntryPoint = false) {
   const router = useRouter()
   const completedStep = createUserStorage((s) => s.completedStep)
+  const role = createUserStorage((s) => s.registrationDraft.role)
 
   useEffect(() => {
     if (completedStep < requiredStep) {
       // Not far enough — send them to where they actually are
-      router.replace(RESUME_ROUTE[completedStep] ?? "/register")
+      router.replace(getResumeRoute(completedStep, role) ?? "/register")
     } else if (isEntryPoint && completedStep > 0) {
       // Already in progress — skip the entry page and resume
-      router.replace(RESUME_ROUTE[completedStep] ?? "/register")
+      router.replace(getResumeRoute(completedStep, role) ?? "/register")
     }
-  }, [completedStep, requiredStep, isEntryPoint, router])
+  }, [completedStep, requiredStep, isEntryPoint, role, router])
 
   return completedStep >= requiredStep
 }

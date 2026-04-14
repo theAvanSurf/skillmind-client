@@ -44,3 +44,10 @@ export interface ConfirmRequest {
     UserId: string;
     Code: string;
 }
+
+export interface CreateProfessorProfileRequest {
+    bio: string;
+    expertise: string;
+    yearsOfExperience: number;
+    linkedInUrl: string;
+}

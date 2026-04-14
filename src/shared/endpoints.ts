@@ -35,5 +35,28 @@ export const API_ENDPOINTS = {
         GET: (profileId: string) => `/recommendations/${profileId}`,
         TRACK: '/recommendations/events/track',
         TRENDING: '/recommendations/trending/courses'
+    },
+    PROFESSOR: {
+        PROFILE: '/professor/profile',
+        DASHBOARD: '/professor/dashboard',
+        EARNINGS: '/professor/earnings',
+        STUDENTS: '/professor/students',
+        COURSES: '/professor/courses',
+        COURSE: (id: string) => `/professor/courses/${id}`,
+        PUBLISH_COURSE: (id: string) => `/professor/courses/${id}/publish`,
+        SEASONS: '/professor/seasons',
+        LESSONS: '/professor/lessons',
+        EXAMS: '/professor/exams',
+        EXAM: (id: string) => `/professor/exams/${id}`,
+        EXAM_QUESTIONS: (id: string) => `/professor/exams/${id}/questions`,
+        EXAM_PUBLISH: (id: string) => `/professor/exams/${id}/publish`,
+        EXAM_ATTEMPTS: (id: string) => `/professor/exams/${id}/attempts`,
+        GRADE_OPEN_TEXT: '/professor/exams/attempts/grade',
+        CERT_TEMPLATES: '/professor/certificates/templates',
+        CERT_TEMPLATE: (id: string) => `/professor/certificates/templates/${id}`,
+        CERT_ISSUE: '/professor/certificates/issue',
+        CERTS_BY_COURSE: (id: string) => `/professor/certificates/course/${id}`,
+        STRIPE_STATUS: '/professor/stripe/status',
+        STRIPE_CONNECT: '/professor/stripe/connect',
     }
 }

@@ -21,6 +21,7 @@ const navLinks = [
   { label: "Courses", href: "/courses" },
   { label: "Resources", href: "/resources" },
   { label: "Community", href: "/community" },
+  { label: "Teach", href: "/professor/dashboard" },
 ]
 
 export default function MainNav({
