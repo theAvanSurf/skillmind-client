@@ -2,9 +2,12 @@
 
 import { Brain } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { createUserStorage } from "@/store/create-user-storage"
 
 export default function WelcomeScreen() {
   const router = useRouter()
+  const user = createUserStorage((s) => s.user)
+  const isProfessor = user?.role === 0
 
   return (
     <div className="fixed inset-0 flex flex-col bg-[#0a0a0f] overflow-hidden">
@@ -44,15 +47,17 @@ export default function WelcomeScreen() {
         </h1>
 
         <p className="mt-4 text-base text-white/50">
-          Your learning journey starts now. Happy learning!
+          {isProfessor
+            ? "Your teaching journey starts now. Let's build your first course!"
+            : "Your learning journey starts now. Happy learning!"}
         </p>
 
         <button
           type="button"
-          onClick={() => router.push("/main")}
+          onClick={() => router.push(isProfessor ? "/professor/dashboard" : "/main")}
           className="mt-10 rounded-xl bg-linear-to-r from-blue-500 to-blue-600 px-10 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-all hover:from-blue-600 hover:to-blue-700 hover:shadow-blue-500/50"
         >
-          Start Exploring Courses! :)
+          {isProfessor ? "Go to My Dashboard" : "Start Exploring Courses! :)"}
         </button>
       </div>
     </div>

@@ -3,6 +3,7 @@
 import React, { useState } from "react"
 import { Loader2, CreditCard, ArrowRight, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
+import axios from "axios"
 import AuthLayout from "../components/AuthLayout"
 import { useRegistrationGuard } from "../hooks/useRegistrationGuard"
 import { createUserStorage } from "@/store/create-user-storage"
@@ -15,15 +16,16 @@ export default function StripeConnectStep() {
   const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
   const setUserId = createUserStorage((s) => s.setUserId)
   const draft = createUserStorage((s) => s.registrationDraft)
-  const completedStep = createUserStorage((s) => s.completedStep)
+  const userId = createUserStorage((s) => s.userId)
   useRegistrationGuard(7)
 
   const [loading, setLoading] = useState(false)
   const [apiError, setApiError] = useState("")
 
   const doSignUp = async () => {
-    // Skip the API call if already signed up (backtracking)
-    if (completedStep >= 3) {
+    // Skip signUp if already done — userId is the reliable signal,
+    // not completedStep (which reaches 7 before signUp for professors)
+    if (userId) {
       router.push("/register/step5")
       return
     }
@@ -50,7 +52,17 @@ export default function StripeConnectStep() {
       setCompletedStep(3)
       router.push("/register/step5")
     } catch (err) {
-      setApiError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+      if (axios.isAxiosError(err)) {
+        const data = err.response?.data
+        const msg =
+          data?.details?.join(", ") ||
+          data?.message ||
+          err.message ||
+          "Something went wrong. Please try again."
+        setApiError(msg)
+      } else {
+        setApiError(err instanceof Error ? err.message : "Something went wrong. Please try again.")
+      }
     } finally {
       setLoading(false)
     }
