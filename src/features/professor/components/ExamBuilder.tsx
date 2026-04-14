@@ -68,7 +68,7 @@ function AddQuestionForm({ examId, onDone }: AddQuestionFormProps) {
       type === "OpenText" ? [] : options.filter((o) => o.text.trim())
     await addQuestion.mutateAsync({
       examId,
-      req: { text, questionType: type, pointValue: points, order: Date.now(), options: filteredOptions },
+      req: { text, questionType: type, pointValue: points, order: Math.floor(Date.now() / 1000), options: filteredOptions },
     })
     onDone()
   }

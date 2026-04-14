@@ -4,6 +4,7 @@ export type CourseLesson = {
   id: string;
   title: string;
   duration: string;
+  videoUrl?: string; // Added to fix the build
   kind: "lesson" | "exercise";
 };
 
@@ -24,9 +25,38 @@ export type CourseDetailsModel = {
   image: string;
   progress: number;
   videoUrl: string;
+  price: number;
+  professorId?: string;
   seasons: CourseSeason[];
   relatedCourses: any[];
 };
+
+export type EnrollmentStatus = {
+  isEnrolled: boolean;
+  purchaseRequired: boolean;
+  price: number;
+};
+
+export type PurchaseIntent = {
+  clientSecret: string;
+  paymentIntentId: string;
+  amount: number;
+};
+
+export async function getEnrollmentStatus(courseId: string): Promise<EnrollmentStatus> {
+  const res = await fetch(`/api/courses/${courseId}/enrollment-status`);
+  if (!res.ok) throw new Error("Failed to fetch enrollment status");
+  return res.json();
+}
+
+export async function createPurchaseIntent(courseId: string): Promise<PurchaseIntent> {
+  const res = await fetch(`/api/courses/${courseId}/purchase`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "Purchase failed" }));
+    throw new Error(err.message || "Purchase failed");
+  }
+  return res.json();
+}
 
 type FetchCourseDetailsOptions = {
   simulateFailure?: boolean;
@@ -171,6 +201,8 @@ export async function fetchCourseDetails(
           category: course.category,
           tags: course.tags,
           image: course.thumbnailUrl,
+          price: course.price ?? 0,
+          professorId: course.professorId,
           progress: 0,
           videoUrl: "",
           seasons: mappedSeasons,
@@ -185,6 +217,8 @@ export async function fetchCourseDetails(
           category: course.category,
           tags: course.tags,
           image: course.thumbnailUrl,
+          price: course.price ?? 0,
+          professorId: course.professorId,
           progress: 0,
           videoUrl: "",
           seasons: mappedSeasons,

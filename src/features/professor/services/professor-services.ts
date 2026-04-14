@@ -19,6 +19,9 @@ import type {
   ExamAttempt,
   CertificateTemplate,
   Certificate,
+  LiveSession,
+  LiveSessionCreated,
+  CreateLiveSessionRequest,
 } from "../types/professor.types"
 
 const api = axios.create({ baseURL: "/api/professor" })
@@ -199,5 +202,37 @@ export async function issueCertificate(req: {
   templateId: string
 }): Promise<Certificate> {
   const { data } = await api.post<Certificate>("/certificates/issue", req)
+  return data
+}
+
+// ── Live Streaming ─────────────────────────────────────────────────────────────
+
+export async function getLiveSessions(): Promise<LiveSession[]> {
+  const { data } = await api.get<LiveSession[]>("/livestreams")
+  return data
+}
+
+export async function createLiveSession(req: CreateLiveSessionRequest): Promise<LiveSessionCreated> {
+  const { data } = await api.post<LiveSessionCreated>("/livestreams", req)
+  return data
+}
+
+export async function startLiveSession(id: string): Promise<LiveSession> {
+  const { data } = await api.post<LiveSession>(`/livestreams/${id}/start`)
+  return data
+}
+
+export async function endLiveSession(id: string): Promise<LiveSession> {
+  const { data } = await api.post<LiveSession>(`/livestreams/${id}/end`)
+  return data
+}
+
+export async function getYouTubeStatus(): Promise<{ isConnected: boolean }> {
+  const { data } = await api.get<{ isConnected: boolean }>("/livestreams/youtube-status")
+  return data
+}
+
+export async function getYouTubeOAuthUrl(): Promise<{ authorizationUrl: string }> {
+  const { data } = await api.get<{ authorizationUrl: string }>("/livestreams/oauth/url")
   return data
 }

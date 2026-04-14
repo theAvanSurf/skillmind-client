@@ -22,12 +22,6 @@ export default function StripeConnectStep() {
   const [apiError, setApiError] = useState("")
 
   const doSignUp = async () => {
-    // Skip the API call if already signed up (backtracking)
-    if (completedStep >= 3) {
-      router.push("/register/step5")
-      return
-    }
-
     setLoading(true)
     setApiError("")
     try {

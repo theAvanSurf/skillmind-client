@@ -1,10 +1,10 @@
 "use client"
 
-import React from "react"
+import React, { useEffect } from "react"
 import { useForm, Controller } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import PhoneInput, { isValidPhoneNumber, getCountries } from "react-phone-number-input"
 import en from "react-phone-number-input/locale/en.json"
 import "react-phone-number-input/style.css"
@@ -59,10 +59,20 @@ const FieldError = ({ msg }: { msg?: string }) =>
 
 export default function PersonalInfoStep() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const freshEntry = searchParams.get("fresh") === "1"
   const setCompletedStep = createUserStorage((s) => s.setCompletedStep)
   const setRegistrationDraft = createUserStorage((s) => s.setRegistrationDraft)
+  const resetRegistration = createUserStorage((s) => s.resetRegistration)
   const draft = createUserStorage((s) => s.registrationDraft)
-  useRegistrationGuard(0, true)
+  useRegistrationGuard(0, !freshEntry)
+
+  useEffect(() => {
+    if (freshEntry) {
+      resetRegistration()
+    }
+  }, [freshEntry, resetRegistration])
+
   const {
     register,
     handleSubmit,
@@ -72,11 +82,11 @@ export default function PersonalInfoStep() {
     resolver: zodResolver(schema),
     mode: "onTouched",
     defaultValues: {
-      firstName: draft.firstName ?? "",
-      lastName: draft.lastName ?? "",
-      birthDate: draft.birthDate ?? "",
-      phone: draft.phone ?? "",
-      country: draft.country ?? "",
+      firstName: freshEntry ? "" : (draft.firstName ?? ""),
+      lastName: freshEntry ? "" : (draft.lastName ?? ""),
+      birthDate: freshEntry ? "" : (draft.birthDate ?? ""),
+      phone: freshEntry ? "" : (draft.phone ?? ""),
+      country: freshEntry ? "" : (draft.country ?? ""),
     },
   })
 

@@ -1,3 +1,5 @@
+import { sileo } from "sileo";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import * as svc from "../services/professor-services"
 import type {
@@ -23,6 +25,8 @@ export const professorKeys = {
   attempts: (examId: string) => ["professor", "attempts", examId] as const,
   certTemplates: ["professor", "cert-templates"] as const,
   certs: (courseId: string) => ["professor", "certs", courseId] as const,
+  livestreams: ["professor", "livestreams"] as const,
+  youtubeStatus: ["professor", "youtube", "status"] as const,
 }
 
 // ── Profile ───────────────────────────────────────────────────────────────────
@@ -54,7 +58,7 @@ export function useEnrolledStudents() {
 }
 
 export function useStripeStatus() {
-  return useQuery({ queryKey: professorKeys.stripeStatus, queryFn: svc.getStripeStatus })
+  return useQuery({ queryKey: professorKeys.stripeStatus, queryFn: svc.getStripeStatus, staleTime: 0 })
 }
 
 // ── Courses ───────────────────────────────────────────────────────────────────
@@ -86,10 +90,17 @@ export function useUpdateCourse() {
   })
 }
 
+
 export function usePublishCourse() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (id: string) => svc.publishCourse(id),
+    mutationFn: async (id: string) => {
+      return await sileo.promise(svc.publishCourse(id), {
+        loading: { title: "Publishing course..." },
+        success: { title: "Course published successfully!" },
+        error: { title: "Failed to publish course" },
+      });
+    },
     onSuccess: (_, id) => {
       qc.invalidateQueries({ queryKey: professorKeys.courses })
       qc.invalidateQueries({ queryKey: professorKeys.course(id) })
@@ -207,5 +218,39 @@ export function useIssueCertificate() {
   return useMutation({
     mutationFn: svc.issueCertificate,
     onSuccess: (data) => qc.invalidateQueries({ queryKey: professorKeys.certs(data.courseId) }),
+  })
+}
+
+// ── Live Streaming ─────────────────────────────────────────────────────────────
+
+export function useLiveSessions() {
+  return useQuery({ queryKey: professorKeys.livestreams, queryFn: svc.getLiveSessions })
+}
+
+export function useYouTubeStatus() {
+  return useQuery({ queryKey: professorKeys.youtubeStatus, queryFn: svc.getYouTubeStatus, staleTime: 0 })
+}
+
+export function useCreateLiveSession() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: svc.createLiveSession,
+    onSuccess: () => qc.invalidateQueries({ queryKey: professorKeys.livestreams }),
+  })
+}
+
+export function useStartLiveSession() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: svc.startLiveSession,
+    onSuccess: () => qc.invalidateQueries({ queryKey: professorKeys.livestreams }),
+  })
+}
+
+export function useEndLiveSession() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: svc.endLiveSession,
+    onSuccess: () => qc.invalidateQueries({ queryKey: professorKeys.livestreams }),
   })
 }

@@ -20,6 +20,7 @@ export const httpClientBrowser = axios.create({
     baseURL: "/api",
     timeout: 10000,
     headers: { "Content-Type": "application/json" },
+    withCredentials: true,
 });
 
 httpClientBrowser.interceptors.response.use(

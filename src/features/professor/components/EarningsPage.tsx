@@ -1,6 +1,8 @@
 "use client"
 
+import { useState } from "react"
 import { DollarSign, TrendingUp, Clock, CreditCard, ExternalLink, AlertTriangle, Loader2 } from "lucide-react"
+import { createStripeConnect } from "../services/professor-services"
 import { useEarnings, useStripeStatus } from "../hooks/useProfessor"
 import EarningsChart from "./EarningsChart"
 import {
@@ -32,6 +34,29 @@ const CustomPieTooltip = ({ active, payload }: any) => {
 export default function EarningsPage() {
   const { data: earnings, isLoading: earningsLoading } = useEarnings()
   const { data: stripeStatus, isLoading: stripeLoading } = useStripeStatus()
+  const [connectingStripe, setConnectingStripe] = useState(false)
+  const [stripeError, setStripeError] = useState("")
+
+  const handleStripeConnect = async () => {
+    if (connectingStripe) return
+
+    setConnectingStripe(true)
+    setStripeError("")
+    try {
+      const returnUrl = `${window.location.origin}/professor/stripe/connect`
+      const response = await createStripeConnect(returnUrl)
+
+      if (!response?.onboardingUrl) {
+        throw new Error("Stripe onboarding URL was not returned")
+      }
+
+      window.location.assign(response.onboardingUrl)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not start Stripe onboarding"
+      setStripeError(message)
+      setConnectingStripe(false)
+    }
+  }
 
   if (earningsLoading) {
     return (
@@ -76,11 +101,22 @@ export default function EarningsPage() {
             </p>
           </div>
           {!stripeStatus?.payoutsEnabled && (
-            <button className="flex shrink-0 items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600">
-              <ExternalLink size={14} /> Complete setup
+            <button
+              onClick={handleStripeConnect}
+              disabled={connectingStripe}
+              className="flex shrink-0 items-center gap-2 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {connectingStripe ? <Loader2 size={14} className="animate-spin" /> : <ExternalLink size={14} />}
+              {connectingStripe ? "Opening Stripe..." : "Complete setup"}
             </button>
           )}
         </div>
+        {stripeError && (
+          <div className="mt-3 flex items-center gap-2 text-xs text-red-400">
+            <AlertTriangle size={14} />
+            <span>{stripeError}</span>
+          </div>
+        )}
       </div>
 
       {/* Summary cards */}

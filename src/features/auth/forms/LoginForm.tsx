@@ -28,6 +28,10 @@ async function shouldGoToContinue(loginData: LoginAPIResponse): Promise<boolean>
     }
 }
 
+function isProfessor(roles: string[] | undefined): boolean {
+    return Array.isArray(roles) && roles.some((r) => r.toLowerCase() === "professor");
+}
+
 export default function LoginForm() {
     const router = useRouter();
     const [userName, setUserName] = useState("");
@@ -41,6 +45,11 @@ export default function LoginForm() {
             { userName, password },
             {
                 onSuccess: async (data) => {
+                    if (isProfessor(data.roles)) {
+                        router.push("/professor/dashboard");
+                        return;
+                    }
+
                     const continueFlow = await shouldGoToContinue(data);
                     router.push(continueFlow ? "/continue" : "/main");
                 }
@@ -138,7 +147,7 @@ export default function LoginForm() {
             <p className="mt-5 text-center text-xs text-white/40">
                 Don&apos;t have an account?{" "}
                 <button
-                    onClick={() => router.push("/register")}
+                    onClick={() => router.push("/register?fresh=1")}
                     className="font-semibold text-blue-400 transition hover:text-blue-300"
                 >
                     Create Account

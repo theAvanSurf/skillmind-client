@@ -46,6 +46,7 @@ export interface ConfirmRequest {
 }
 
 export interface CreateProfessorProfileRequest {
+    userId: string;
     bio: string;
     expertise: string;
     yearsOfExperience: number;
