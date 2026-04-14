@@ -254,8 +254,6 @@ export function VideoPlayer({
         }
       });
 
-      console.log("[VideoPlayer] Loading URL:", videoUrl);
-
       // Pre-check via server-side proxy to avoid CORS hiding the real status.
       // A direct browser fetch of a Cloudinary 423 response may be blocked by
       // CORS, making the status invisible. The /api/check-video route fetches
@@ -266,7 +264,6 @@ export function VideoPlayer({
           { cache: "no-store" }
         );
         const { status } = await pre.json() as { status: number };
-        console.log("[VideoPlayer] Pre-check status:", status);
         if (status === 423) {
           if (!cancelled) setPlayerState("processing");
           return;
@@ -279,6 +276,10 @@ export function VideoPlayer({
       try {
         await player.load(videoUrl);
         if (cancelled) return;
+
+        // player.load() resolved — the manifest is parsed and Shaka is ready.
+        // Don't wait for the buffering event to clear the spinner; mark ready now.
+        setPlayerState("ready");
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tracks: any[] = player.getVariantTracks();
