@@ -1,4 +1,4 @@
-import { LoginAPIResponse, LoginRequest, SignUpRequest, SignUpResponse, ConfirmRequest } from "@/features/auth/types/auth.types";
+import { LoginAPIResponse, LoginRequest, SignUpRequest, SignUpResponse, ConfirmRequest, CreateProfessorProfileRequest } from "@/features/auth/types/auth.types";
 import axios from "axios";
 
 export default class AuthenticationServices {
@@ -15,5 +15,11 @@ export default class AuthenticationServices {
 
     async confirmAccount(request: ConfirmRequest): Promise<void> {
         await axios.post("/api/auth/confirm", request);
+    }
+
+    async createProfessorProfile(request: CreateProfessorProfileRequest, token: string): Promise<void> {
+        await axios.post("/api/professor/profile", request, {
+            headers: { Authorization: `Bearer ${token}` },
+        });
     }
 }
