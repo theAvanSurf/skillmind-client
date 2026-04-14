@@ -6,22 +6,25 @@ import { VideoPlayer } from "@/shared/video-player/VideoPlayer";
 const CLOUDINARY_HLS =
   "https://res.cloudinary.com/dgsfeis7x/video/upload/sp_auto/v1769999430/uploads/yfhx58pwpsoywx7lcrzf.m3u8";
 
+const CLOUDINARY_MPD =
+  "https://res.cloudinary.com/dgsfeis7x/video/upload/sp_auto/v1776202850/uploads/lwnrr4tmkscacmiahldh.mpd";
+
 const TEST_ITEMS = [
   {
     id: 1,
-    title: "Video Player Test: Adaptive Stream",
-    description: "Public test route for validating controls, buffering, quality menu, and progress persistence.",
+    title: "Video Player Test: MPD (DASH)",
+    description: "Testing the MPD URL to debug 423 / loading issues.",
     seasonName: "QA Season",
-    chapterName: "Playback Core",
+    chapterName: "DASH Playback",
     episodeNumber: 1,
-    videoUrl: CLOUDINARY_HLS,
+    videoUrl: CLOUDINARY_MPD,
   },
   {
     id: 2,
-    title: "Video Player Test: Resume State",
-    description: "Same stream, different storage key to validate per-asset progress memory.",
+    title: "Video Player Test: HLS",
+    description: "Known-working HLS stream for comparison.",
     seasonName: "QA Season",
-    chapterName: "Resume Behavior",
+    chapterName: "HLS Playback",
     episodeNumber: 2,
     videoUrl: CLOUDINARY_HLS,
   },

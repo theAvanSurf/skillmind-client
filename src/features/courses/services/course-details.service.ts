@@ -175,6 +175,7 @@ export async function fetchCourseDetails(
       lessons: (s.lessons || []).map((l: any) => ({
         id: l.id,
         title: l.title,
+        videoUrl: l.videoUrl,
         duration: Math.ceil((l.durationSeconds || 0) / 60) + " mins",
         kind: "lesson"
       }))

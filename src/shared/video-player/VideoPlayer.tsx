@@ -161,6 +161,12 @@ export function VideoPlayer({
     const video = videoRef.current;
     if (!video) return;
 
+    if (!videoUrl) {
+      setError("No video available for this lesson.");
+      setPlayerState("error");
+      return;
+    }
+
     if (!adaptive) {
       // Native path — video src set via JSX prop, just reset state
       setQualityTracks([]);
@@ -248,6 +254,8 @@ export function VideoPlayer({
         }
       });
 
+      console.log("[VideoPlayer] Loading URL:", videoUrl);
+
       // Pre-check via server-side proxy to avoid CORS hiding the real status.
       // A direct browser fetch of a Cloudinary 423 response may be blocked by
       // CORS, making the status invisible. The /api/check-video route fetches
@@ -258,6 +266,7 @@ export function VideoPlayer({
           { cache: "no-store" }
         );
         const { status } = await pre.json() as { status: number };
+        console.log("[VideoPlayer] Pre-check status:", status);
         if (status === 423) {
           if (!cancelled) setPlayerState("processing");
           return;
@@ -331,6 +340,16 @@ export function VideoPlayer({
     const id = setTimeout(() => setInitKey((k) => k + 1), 10_000);
     return () => clearTimeout(id);
   }, [playerState, initKey]);
+
+  // ── Loading timeout — show an error if stuck loading for too long ──────────
+  useEffect(() => {
+    if (playerState !== "loading" && playerState !== "buffering") return;
+    const id = setTimeout(() => {
+      setError("Video is taking too long to load. It may still be processing on Cloudinary — try again in a few minutes.");
+      setPlayerState("error");
+    }, 25_000);
+    return () => clearTimeout(id);
+  }, [playerState]);
 
   // ── Controls auto-hide ─────────────────────────────────────────────────────
   const scheduleHide = useCallback(() => {
