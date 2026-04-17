@@ -112,6 +112,12 @@ export function VideoPlayer({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const shakaRef = useRef<any>(null);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stable listener refs so event handlers always reflect the current load session
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onShakaErrorRef = useRef<((e: any) => void) | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onShakaBufferingRef = useRef<((e: any) => void) | null>(null);
+  const [shakaReady, setShakaReady] = useState(false);
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [playerState, setPlayerState] = useState<PlayerState>("idle");
@@ -156,41 +162,16 @@ export function VideoPlayer({
     void loadShakaModule();
   }, [adaptive]);
 
-  // ── Shaka init / teardown ──────────────────────────────────────────────────
+  // ── Effect 1: Shaka player lifecycle (create once, destroy on unmount) ───────
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !adaptive) return;
 
-    if (!videoUrl) {
-      setError("No video available for this lesson.");
-      setPlayerState("error");
-      return;
-    }
+    let destroyed = false;
 
-    if (!adaptive) {
-      // Native path — video src set via JSX prop, just reset state
-      setQualityTracks([]);
-      setSelectedQuality(null);
-      setPlayerState("loading");
-      return;
-    }
-
-    let cancelled = false;
-
-    const init = async () => {
-      // Destroy any existing Shaka instance
-      if (shakaRef.current) {
-        await shakaRef.current.destroy();
-        shakaRef.current = null;
-      }
-
-      setError(null);
-      setQualityTracks([]);
-      setSelectedQuality(null);
-      setPlayerState("loading");
-
+    const setup = async () => {
       const mod = await loadShakaModule();
-      if (cancelled) return;
+      if (destroyed) return;
 
       const shaka = mod.default;
       shaka.polyfill.installAll();
@@ -207,57 +188,90 @@ export function VideoPlayer({
           bufferingGoal: 10,
           rebufferingGoal: 2,
           bufferBehind: 30,
-          // Fail fast on bad segments instead of retrying forever
-          retryParameters: {
-            maxAttempts: 2,
-            baseDelay: 500,
-            backoffFactor: 2,
-            fuzzFactor: 0.5,
-            timeout: 15_000,
-          },
+          retryParameters: { maxAttempts: 2, baseDelay: 500, backoffFactor: 2, fuzzFactor: 0.5, timeout: 15_000 },
         },
         manifest: {
-          // Only try the manifest once — if it's 423 we want to fail fast
-          retryParameters: {
-            maxAttempts: 1,
-            baseDelay: 0,
-            backoffFactor: 1,
-            fuzzFactor: 0,
-            timeout: 15_000,
-          },
+          retryParameters: { maxAttempts: 1, baseDelay: 0, backoffFactor: 1, fuzzFactor: 0, timeout: 15_000 },
         },
       });
 
       await player.attach(video);
+      if (destroyed) { void player.destroy(); return; }
+
       shakaRef.current = player;
 
+      // Stable listeners — delegate to refs updated each load session
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      player.addEventListener("error", (e: any) => {
-        if (cancelled) return;
-        // HTTP 423 = Cloudinary still transcoding — show processing state
-        if (e.detail?.code === 1001 && e.detail?.data?.[1] === 423) {
-          setPlayerState("processing");
-          return;
-        }
-        console.error("[Shaka] Error:", e.detail);
-        setError("A streaming error occurred. Please try again.");
-        setPlayerState("error");
-      });
-
+      player.addEventListener("error", (e: any) => onShakaErrorRef.current?.(e));
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      player.addEventListener("buffering", (e: any) => {
-        if (cancelled) return;
-        if (e.buffering) {
-          setPlayerState("buffering");
-        } else {
-          setPlayerState(video.paused ? "ready" : "playing");
-        }
-      });
+      player.addEventListener("buffering", (e: any) => onShakaBufferingRef.current?.(e));
 
-      // Pre-check via server-side proxy to avoid CORS hiding the real status.
-      // A direct browser fetch of a Cloudinary 423 response may be blocked by
-      // CORS, making the status invisible. The /api/check-video route fetches
-      // server-side where CORS doesn't apply.
+      setShakaReady(true);
+    };
+
+    setup();
+
+    return () => {
+      destroyed = true;
+      setShakaReady(false);
+      if (shakaRef.current) {
+        void shakaRef.current.destroy();
+        shakaRef.current = null;
+      }
+    };
+  }, [adaptive]);
+
+  // ── Effect 2: URL loading (reuses the existing player, no teardown) ──────────
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!videoUrl) {
+      setError("No video available for this lesson.");
+      setPlayerState("error");
+      return;
+    }
+
+    if (!adaptive) {
+      setQualityTracks([]);
+      setSelectedQuality(null);
+      setPlayerState("loading");
+      return;
+    }
+
+    if (!shakaReady || !shakaRef.current) return;
+
+    const player = shakaRef.current;
+    let cancelled = false;
+
+    // Wire up handlers for this load session — listeners on the player are stable
+    // wrappers that delegate here, so they always reflect the current cancelled flag.
+    onShakaErrorRef.current = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (cancelled) return;
+      if (e.detail?.code === 1001 && e.detail?.data?.[1] === 423) {
+        setPlayerState("processing");
+        return;
+      }
+      console.error("[Shaka] Error:", e.detail);
+      setError("A streaming error occurred. Please try again.");
+      setPlayerState("error");
+    };
+
+    onShakaBufferingRef.current = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (cancelled) return;
+      if (e.buffering) {
+        setPlayerState("buffering");
+      } else {
+        setPlayerState(video?.paused ? "ready" : "playing");
+      }
+    };
+
+    const load = async () => {
+      setError(null);
+      setQualityTracks([]);
+      setSelectedQuality(null);
+      setPlayerState("loading");
+
+      // Pre-check via server-side proxy — avoids CORS hiding a 423 status
       try {
         const pre = await fetch(
           `/api/check-video?url=${encodeURIComponent(videoUrl)}`,
@@ -269,7 +283,7 @@ export function VideoPlayer({
           return;
         }
       } catch {
-        // Proxy unavailable — let Shaka attempt the load and fail fast
+        // Proxy unavailable — let Shaka attempt and fail fast
       }
       if (cancelled) return;
 
@@ -277,9 +291,8 @@ export function VideoPlayer({
         await player.load(videoUrl);
         if (cancelled) return;
 
-        // player.load() resolved — the manifest is parsed and Shaka is ready.
-        // Don't wait for the buffering event to clear the spinner; mark ready now.
         setPlayerState("ready");
+        void video?.play().catch(() => {/* autoplay blocked by browser policy — user taps play */});
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tracks: any[] = player.getVariantTracks();
@@ -289,14 +302,12 @@ export function VideoPlayer({
             (t, i, arr) => arr.findIndex((x: any) => x.height === t.height) === i
           )
           .sort((a, b) => (b.height ?? 0) - (a.height ?? 0));
-
         setQualityTracks(
           unique.map((t) => ({ id: t.id, height: t.height, bandwidth: t.bandwidth }))
         );
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         if (cancelled) return;
-        // HTTP 423 = Cloudinary still transcoding — show processing state
         if (err?.code === 1001 && err?.data?.[1] === 423) {
           setPlayerState("processing");
           return;
@@ -307,16 +318,10 @@ export function VideoPlayer({
       }
     };
 
-    init();
+    load();
 
-    return () => {
-      cancelled = true;
-      if (shakaRef.current) {
-        shakaRef.current.destroy();
-        shakaRef.current = null;
-      }
-    };
-  }, [videoUrl, adaptive, initKey]);
+    return () => { cancelled = true; };
+  }, [videoUrl, adaptive, shakaReady, initKey]);
 
   // ── Fullscreen sync ────────────────────────────────────────────────────────
   useEffect(() => {

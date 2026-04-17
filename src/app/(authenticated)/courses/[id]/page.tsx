@@ -9,6 +9,7 @@ import {
   resolveSeason,
   getEnrollmentStatus,
   createPurchaseIntent,
+  confirmEnrollment,
   type CourseDetailsModel,
   type CourseSeason,
   type EnrollmentStatus,
@@ -22,11 +23,13 @@ type Tab = "episodes" | "related" | "details";
 
 function PurchaseForm({
   courseId,
+  paymentIntentId,
   amount,
   onSuccess,
   onClose,
 }: {
   courseId: string;
+  paymentIntentId: string;
   amount: number;
   onSuccess: () => void;
   onClose: () => void;
@@ -62,7 +65,12 @@ function PurchaseForm({
       setError(confirmError.message ?? "Payment failed");
       setLoading(false);
     } else {
-      // Payment succeeded (no redirect needed)
+      // Payment succeeded — confirm enrollment server-side
+      try {
+        await confirmEnrollment(courseId, paymentIntentId);
+      } catch {
+        // Non-fatal: webhook will handle it as fallback
+      }
       onSuccess();
     }
   };
@@ -132,7 +140,7 @@ export default function CourseDetailsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("episodes");
   const [seasonOpen, setSeasonOpen] = useState(false);
   const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatus | null>(null);
-  const [purchaseModal, setPurchaseModal] = useState<{ clientSecret: string; amount: number } | null>(null);
+  const [purchaseModal, setPurchaseModal] = useState<{ clientSecret: string; paymentIntentId: string; amount: number } | null>(null);
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
@@ -204,7 +212,7 @@ export default function CourseDetailsPage() {
         await loadEnrollmentStatus();
         return;
       }
-      setPurchaseModal({ clientSecret: intent.clientSecret, amount: intent.amount });
+      setPurchaseModal({ clientSecret: intent.clientSecret, paymentIntentId: intent.paymentIntentId, amount: intent.amount });
     } catch (err) {
       setPurchaseError(err instanceof Error ? err.message : "Unable to start purchase");
     } finally {
@@ -547,6 +555,7 @@ export default function CourseDetailsPage() {
         >
           <PurchaseForm
             courseId={id}
+            paymentIntentId={purchaseModal.paymentIntentId}
             amount={purchaseModal.amount}
             onSuccess={() => void handlePaymentSuccess()}
             onClose={() => setPurchaseModal(null)}

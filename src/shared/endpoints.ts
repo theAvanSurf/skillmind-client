@@ -25,6 +25,7 @@ export const API_ENDPOINTS = {
         BROWSE: '/courses',
         SEARCH_SUGGESTIONS: '/courses/search',
         CATEGORIES: '/courses/categories',
+        MY_ENROLLMENTS: '/courses/my-enrollments',
         GET_BY_ID: (id: string) => `/courses/${id}`,
         GET_RELATED: (id: string) => `/courses/${id}/related`,
         UPDATE_PROGRESS: (id: string) => `/courses/${id}/progress`,

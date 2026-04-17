@@ -2,12 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, ChevronLeft, Radio } from "lucide-react";
+import { ChevronRight, ChevronLeft, Radio, Lock } from "lucide-react";
 import { VideoPlayer } from "@/shared/video-player/VideoPlayer";
 import {
   fetchCourseDetails,
   getNextLesson,
   getPreviousLesson,
+  getEnrollmentStatus,
   type CourseDetailsModel,
 } from "@/features/courses/services/course-details.service";
 
@@ -96,6 +97,7 @@ export default function CoursePlayerPage() {
   const [seasonId, setSeasonId] = useState<string | null>(null);
   const [lessonId, setLessonId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [accessDenied, setAccessDenied] = useState(false);
   const [activeTab, setActiveTab] = useState<"lessons" | "live">("lessons");
 
   const selectedSeason = useMemo(() => {
@@ -121,9 +123,19 @@ export default function CoursePlayerPage() {
   useEffect(() => {
     const loadCourse = async () => {
       try {
+        // Guard: check enrollment before loading player
+        const enrollment = await getEnrollmentStatus(id).catch(() => null);
+        if (enrollment && enrollment.purchaseRequired && !enrollment.isEnrolled) {
+          setAccessDenied(true);
+          setIsLoading(false);
+          return;
+        }
+
         const details = await fetchCourseDetails(id);
         if (details) {
           setCourseDetails(details);
+          // Read URL params once on mount — lesson switching is handled by
+          // direct state updates so we don't re-fetch on every router.replace.
           const paramSeason = searchParams.get("season");
           const paramLesson = searchParams.get("lesson");
           const season = paramSeason || details.seasons[0]?.id;
@@ -142,31 +154,50 @@ export default function CoursePlayerPage() {
       }
     };
     void loadCourse();
-  }, [id, searchParams]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]); // Only re-fetch when the course changes, not on every lesson switch
+
+  const navigateToLesson = useCallback((seasonId: string, lessonId: string) => {
+    setSeasonId(seasonId);
+    setLessonId(lessonId);
+    router.replace(`/my-courses/${id}?season=${seasonId}&lesson=${lessonId}`);
+  }, [id, router]);
 
   const handleAutoPlayNext = useCallback(() => {
-    if (nextChapter) {
-      router.push(`/my-courses/${id}?season=${nextChapter.seasonId}&lesson=${nextChapter.lessonId}`);
-    }
-  }, [nextChapter, id, router]);
+    if (nextChapter) navigateToLesson(nextChapter.seasonId, nextChapter.lessonId);
+  }, [nextChapter, navigateToLesson]);
 
   const handlePlayNext = useCallback(() => {
-    if (nextChapter) {
-      router.push(`/my-courses/${id}?season=${nextChapter.seasonId}&lesson=${nextChapter.lessonId}`);
-    }
-  }, [nextChapter, id, router]);
+    if (nextChapter) navigateToLesson(nextChapter.seasonId, nextChapter.lessonId);
+  }, [nextChapter, navigateToLesson]);
 
   const handlePlayPrevious = useCallback(() => {
-    if (previousChapter) {
-      router.push(`/my-courses/${id}?season=${previousChapter.seasonId}&lesson=${previousChapter.lessonId}`);
-    }
-  }, [previousChapter, id, router]);
+    if (previousChapter) navigateToLesson(previousChapter.seasonId, previousChapter.lessonId);
+  }, [previousChapter, navigateToLesson]);
 
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
         <div className="h-96 bg-white/8 animate-pulse rounded-lg" />
         <div className="h-8 bg-white/8 animate-pulse rounded w-1/2" />
+      </div>
+    );
+  }
+
+  if (accessDenied) {
+    return (
+      <div className="flex flex-col items-center justify-center p-10 text-center gap-4">
+        <div className="rounded-full bg-yellow-500/10 p-4">
+          <Lock size={28} className="text-yellow-400" />
+        </div>
+        <h2 className="text-xl font-bold text-white">Purchase Required</h2>
+        <p className="text-sm text-white/50 max-w-xs">You need to purchase this course to watch it.</p>
+        <button
+          onClick={() => router.push(`/courses/${id}`)}
+          className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700 transition"
+        >
+          View Course
+        </button>
       </div>
     );
   }
@@ -285,6 +316,13 @@ export default function CoursePlayerPage() {
                               ? "border-blue-400 bg-blue-500/15"
                               : "border-white/10 bg-white/5 hover:bg-white/10"
                           }`}
+                          onClick={() => {
+                            if (!isSelectedSeason) {
+                              const firstLesson = season.lessons[0];
+                              if (firstLesson) navigateToLesson(season.id, firstLesson.id);
+                              else setSeasonId(season.id);
+                            }
+                          }}
                         >
                           <p className="font-semibold text-white">{season.title}</p>
                           <p className="text-xs text-white/60 mt-1">{season.lessons.length} lessons</p>
@@ -295,13 +333,7 @@ export default function CoursePlayerPage() {
                                 return (
                                   <button
                                     key={lesson.id}
-                                    onClick={() => {
-                                      setSeasonId(season.id);
-                                      setLessonId(lesson.id);
-                                      router.push(
-                                        `/my-courses/${id}?season=${season.id}&lesson=${lesson.id}`
-                                      );
-                                    }}
+                                    onClick={(e) => { e.stopPropagation(); navigateToLesson(season.id, lesson.id); }}
                                     className={`w-full text-left px-3 py-2 rounded text-sm transition ${
                                       isSelected
                                         ? "bg-blue-500 text-white font-semibold"
