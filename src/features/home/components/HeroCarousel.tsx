@@ -34,7 +34,7 @@ export default function HeroCarousel({ slides, onPlay }: Props) {
   const slide = slides[current]
 
   return (
-    <div className="relative -mx-4 sm:-mx-6 lg:-mx-10 overflow-hidden bg-black" style={{ height: "min(58vw, 520px)" }}>
+    <div className="relative overflow-hidden bg-black" style={{ width: "100vw", marginLeft: "calc(-50vw + 50%)", height: "min(58vw, 520px)" }}>
       {/* Slides */}
       {slides.map((s, i) => (
         <div

@@ -1,7 +1,7 @@
 'use client'
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { Play, BookOpen, Loader2, AlertTriangle } from "lucide-react";
+import { Play, BookOpen, Loader2, AlertTriangle, Award } from "lucide-react";
 import { getEnrolledCourses } from "@/features/courses/services/course-details.service";
 import { browseCourses } from "@/features/courses/services/browse-courses.service";
 import Recommendations from "@/features/dashboard/components/recommendations";
@@ -39,6 +39,13 @@ export default function MyCoursesPage() {
             Continue your learning journey
           </p>
         </div>
+        <button
+          onClick={() => router.push("/my-courses/certificates")}
+          className="flex items-center gap-2 rounded-xl border border-yellow-500/20 bg-yellow-500/5 px-4 py-2.5 text-sm font-semibold text-yellow-400 hover:bg-yellow-500/10 transition"
+        >
+          <Award size={15} />
+          My Certificates
+        </button>
       </header>
 
       {/* Enrolled courses */}

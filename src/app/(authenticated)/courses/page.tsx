@@ -4,13 +4,14 @@ import {
   useState, useEffect, useRef, useCallback, KeyboardEvent,
 } from "react"
 import { useQuery } from "@tanstack/react-query"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Search, X, BookOpen, Tag, Grid3X3,
   ChevronDown, Sparkles, SlidersHorizontal,
 } from "lucide-react"
 import * as svc from "@/features/courses/services/browse-courses.service"
 import type { BrowseCourseDto, CourseSuggestion, BrowseCoursesQuery } from "@/features/courses/types/course.types"
+import { useTracking } from "@/features/tracking/hooks/useTracking"
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -37,10 +38,18 @@ const SORT_OPTIONS = [
 // ── Browse card ───────────────────────────────────────────────────────────────
 
 function BrowseCourseCard({ course }: { course: BrowseCourseDto }) {
+  const router = useRouter()
+  const { trackEvent } = useTracking()
+
+  const handleClick = () => {
+    trackEvent(course.id, "clicked", course.category ?? undefined, course.tags ?? undefined)
+    router.push(`/courses/${course.id}`)
+  }
+
   return (
-    <Link
-      href={`/courses/${course.id}`}
-      className="group flex flex-col rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden transition-all duration-300 hover:border-white/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30"
+    <button
+      onClick={handleClick}
+      className="group flex flex-col rounded-2xl border border-white/8 bg-white/[0.02] overflow-hidden transition-all duration-300 hover:border-white/20 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 text-left w-full"
     >
       {/* Thumbnail */}
       <div className="relative h-44 bg-white/5 overflow-hidden shrink-0">
@@ -91,7 +100,7 @@ function BrowseCourseCard({ course }: { course: BrowseCourseDto }) {
           ))}
         </div>
       </div>
-    </Link>
+    </button>
   )
 }
 
@@ -187,10 +196,9 @@ export default function CoursesPage() {
     }
   }, [browseResult, page])
 
-  // Reset page when filters change
+  // Reset page when filters change (don't clear courses — accumulate effect replaces at page 0)
   useEffect(() => {
     setPage(0)
-    setAllCourses([])
   }, [committedSearch, category, freeOnly, sort])
 
   // ── inline ghost text (keyboard prediction) ─────────────────────────────────

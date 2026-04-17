@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { Play, Plus, ChevronDown, AlertTriangle, Clock, Lock, CreditCard, CheckCircle, Loader2, X } from "lucide-react";
+import { useTracking } from "@/features/tracking/hooks/useTracking";
 import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import {
   fetchCourseDetails,
@@ -145,6 +146,8 @@ export default function CourseDetailsPage() {
   const [purchaseLoading, setPurchaseLoading] = useState(false);
   const [purchaseError, setPurchaseError] = useState<string | null>(null);
 
+  const { trackEvent } = useTracking();
+
   const loadCourse = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -158,6 +161,7 @@ export default function CourseDetailsPage() {
       const p = resolveStoredProgress(data.id, data.progress, data.duration);
       setSavedProgressPct(p.effectiveProgress);
       setSavedTimestamp(p.storedTimestamp);
+      trackEvent(data.id, "clicked", data.category ?? undefined, data.tags ? String(data.tags) : undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load course.");
     } finally {
@@ -228,11 +232,12 @@ export default function CourseDetailsPage() {
 
   const handlePlay = useCallback(() => {
     if (!course || !selectedSeason) return;
+    trackEvent(course.id, "started", course.category ?? undefined, course.tags ? String(course.tags) : undefined);
     const first = selectedSeason.lessons[0];
     router.push(first
       ? `/my-courses/${course.id}?season=${selectedSeason.id}&lesson=${first.id}`
       : `/my-courses/${course.id}`);
-  }, [course, selectedSeason, router]);
+  }, [course, selectedSeason, router, trackEvent]);
 
   const handlePlayLesson = useCallback((lessonId: string, seasonId: string) => {
     if (!course) return;
@@ -371,8 +376,13 @@ export default function CourseDetailsPage() {
                 </button>
               )}
               <button
-                title="Add to list"
-                className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/50 bg-white/15 text-white transition hover:bg-white/25"
+                title="Add to my courses"
+                onClick={() => {
+                  trackEvent(course.id, "clicked", course.category ?? undefined, course.tags ? String(course.tags) : undefined);
+                  void handlePurchase();
+                }}
+                disabled={purchaseLoading}
+                className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/50 bg-white/15 text-white transition hover:bg-white/25 disabled:opacity-50"
               >
                 <Plus size={18} />
               </button>

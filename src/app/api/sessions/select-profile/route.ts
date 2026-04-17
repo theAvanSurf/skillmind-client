@@ -28,7 +28,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             httpOnly: true,
             sameSite: "lax",
             path: "/",
-            // No explicit maxAge → session cookie; cleared on browser close
+            maxAge: 60 * 60 * 24 * 30, // 30 days — matches typical auth token lifetime
         });
 
         return response;

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useLogin } from "@/features/auth/hooks/useAuth";
 import type { LoginAPIResponse } from "@/features/auth/types/auth.types";
+import { createUserStorage } from "@/store/create-user-storage";
 
 
 const inputCls =
@@ -12,6 +13,7 @@ const inputCls =
 
 async function shouldGoToContinue(loginData: LoginAPIResponse): Promise<boolean> {
     if (!loginData.hasProfiles || loginData.profilesCount === 0) {
+        createUserStorage.getState().setCompletedStep(5);
         return true;
     }
 

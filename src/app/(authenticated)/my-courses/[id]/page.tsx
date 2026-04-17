@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { ChevronRight, ChevronLeft, Radio, Lock } from "lucide-react";
+import { ChevronRight, ChevronLeft, Radio, Lock, ClipboardList, Clock, Trophy } from "lucide-react";
 import { VideoPlayer } from "@/shared/video-player/VideoPlayer";
 import {
   fetchCourseDetails,
@@ -87,6 +87,72 @@ function LiveTab({ courseId }: { courseId: string }) {
   )
 }
 
+interface ExamSummary {
+  id: string;
+  title: string;
+  description?: string;
+  durationMinutes: number;
+  passingScore: number;
+  questionCount: number;
+  status: string;
+}
+
+function ExamsTab({ courseId }: { courseId: string }) {
+  const router = useRouter();
+  const [exams, setExams] = useState<ExamSummary[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`/api/courses/${courseId}/exams`)
+      .then((r) => r.json())
+      .then((d) => setExams(Array.isArray(d) ? d : []))
+      .catch(() => setExams([]))
+      .finally(() => setLoading(false));
+  }, [courseId]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-48">
+        <div className="h-8 w-8 rounded-full border-2 border-white/20 border-t-blue-400 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!exams || exams.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-white/10 p-16 text-center">
+        <ClipboardList size={36} className="mx-auto mb-3 text-white/20" />
+        <p className="text-sm font-semibold text-white/50">No exams available</p>
+        <p className="mt-1 text-xs text-white/25">Your professor hasn't published any exams yet</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {exams.map((exam) => (
+        <div key={exam.id} className="rounded-xl border border-white/10 bg-white/5 p-5 flex items-center justify-between gap-4">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-white truncate">{exam.title}</p>
+            {exam.description && <p className="mt-0.5 text-xs text-white/50 line-clamp-2">{exam.description}</p>}
+            <div className="mt-2 flex items-center gap-4 text-xs text-white/40">
+              <span className="flex items-center gap-1"><Clock size={11} />{exam.durationMinutes} min</span>
+              <span className="flex items-center gap-1"><ClipboardList size={11} />{exam.questionCount} questions</span>
+              <span className="flex items-center gap-1"><Trophy size={11} />Pass: {exam.passingScore}pts</span>
+            </div>
+          </div>
+          <button
+            onClick={() => router.push(`/my-courses/${courseId}/exam/${exam.id}`)}
+            className="shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition"
+          >
+            Take Exam
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function CoursePlayerPage() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
@@ -98,7 +164,8 @@ export default function CoursePlayerPage() {
   const [lessonId, setLessonId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [accessDenied, setAccessDenied] = useState(false);
-  const [activeTab, setActiveTab] = useState<"lessons" | "live">("lessons");
+  const [activeTab, setActiveTab] = useState<"lessons" | "live" | "exams">("lessons");
+  const progressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const selectedSeason = useMemo(() => {
     if (!courseDetails || !seasonId) return null;
@@ -131,20 +198,53 @@ export default function CoursePlayerPage() {
           return;
         }
 
-        const details = await fetchCourseDetails(id);
+        const [details, progressResp] = await Promise.all([
+          fetchCourseDetails(id),
+          fetch(`/api/courses/${id}/progress`).then(r => r.json()).catch(() => null),
+        ]);
+
         if (details) {
           setCourseDetails(details);
-          // Read URL params once on mount — lesson switching is handled by
-          // direct state updates so we don't re-fetch on every router.replace.
           const paramSeason = searchParams.get("season");
           const paramLesson = searchParams.get("lesson");
-          const season = paramSeason || details.seasons[0]?.id;
-          setSeasonId(season ?? null);
-          if (paramLesson) {
-            setLessonId(paramLesson);
-          } else {
-            const firstLesson = details.seasons.find((s) => s.id === season)?.lessons[0];
-            setLessonId(firstLesson?.id ?? null);
+
+          // Determine which lesson to start
+          let targetLessonId: string | null = null;
+          let targetSeasonId: string | null = null;
+
+          if (paramLesson && paramSeason) {
+            targetLessonId = paramLesson;
+            targetSeasonId = paramSeason;
+          } else if (progressResp?.lastLessonId) {
+            // Resume from backend — find season for this lesson
+            for (const season of details.seasons) {
+              const lesson = season.lessons.find(l => l.id === progressResp.lastLessonId);
+              if (lesson) {
+                targetLessonId = lesson.id;
+                targetSeasonId = season.id;
+                break;
+              }
+            }
+          }
+
+          if (!targetLessonId) {
+            const season = paramSeason || details.seasons[0]?.id;
+            targetSeasonId = season ?? null;
+            const firstLesson = details.seasons.find(s => s.id === season)?.lessons[0];
+            targetLessonId = firstLesson?.id ?? null;
+          }
+
+          setSeasonId(targetSeasonId);
+          setLessonId(targetLessonId);
+
+          // Seed localStorage with backend timestamp so VideoPlayer seeks correctly
+          if (progressResp?.lastLessonId && progressResp?.lastTimestampSeconds > 0) {
+            try {
+              localStorage.setItem(
+                `vp:course-${id}-lesson-${progressResp.lastLessonId}`,
+                String(progressResp.lastTimestampSeconds)
+              );
+            } catch { /* ignore */ }
           }
         }
       } catch {
@@ -156,6 +256,25 @@ export default function CoursePlayerPage() {
     void loadCourse();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]); // Only re-fetch when the course changes, not on every lesson switch
+
+  // Fire immediately when a lesson becomes active — creates the DB record right away
+  // so it shows in Watch History even if user leaves before the 10s debounce fires.
+  useEffect(() => {
+    if (!lessonId || !courseDetails) return;
+    const storedPct = parseFloat(localStorage.getItem(`course-progress:${courseDetails.id}`) || "0") || 0;
+    const storedTime = parseFloat(localStorage.getItem(`vp:course-${courseDetails.id}-lesson-${lessonId}`) || "0") || 0;
+    fetch(`/api/courses/${courseDetails.id}/progress`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        progressPercent: Math.round(storedPct),
+        lastLessonId: lessonId,
+        lastTimestampSeconds: storedTime,
+      }),
+    })
+      .then(() => window.dispatchEvent(new Event("skillmind:progress-updated")))
+      .catch(() => {});
+  }, [lessonId, courseDetails?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const navigateToLesson = useCallback((seasonId: string, lessonId: string) => {
     setSeasonId(seasonId);
@@ -235,10 +354,24 @@ export default function CoursePlayerPage() {
           <Radio size={13} />
           Live
         </button>
+        <button
+          onClick={() => setActiveTab("exams")}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-semibold transition border-b-2 -mb-px ${
+            activeTab === "exams"
+              ? "border-purple-400 text-white"
+              : "border-transparent text-white/40 hover:text-white/70"
+          }`}
+        >
+          <ClipboardList size={13} />
+          Exams
+        </button>
       </div>
 
       {/* LIVE TAB */}
       {activeTab === "live" && <LiveTab courseId={id} />}
+
+      {/* EXAMS TAB */}
+      {activeTab === "exams" && <ExamsTab courseId={id} />}
 
       {/* LESSONS TAB */}
       {activeTab === "lessons" && (
@@ -252,14 +385,27 @@ export default function CoursePlayerPage() {
               seasonName={selectedSeason?.title}
               chapterName={selectedLesson?.title}
               episodeNumber={selectedLesson ? 1 : undefined}
-              storageKey={`course-${courseDetails.id}`}
+              storageKey={lessonId ? `course-${courseDetails.id}-lesson-${lessonId}` : `course-${courseDetails.id}`}
               onProgressUpdate={(progress, time) => {
                 try {
                   localStorage.setItem(`course-progress:${courseDetails.id}`, String(progress));
                   localStorage.setItem(`course-last-time:${courseDetails.id}`, String(time));
-                } catch {
-                  // Ignore storage write failures
-                }
+                } catch { /* ignore */ }
+                // Debounce backend sync — fire at most once every 10s
+                if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
+                progressTimerRef.current = setTimeout(() => {
+                  fetch(`/api/courses/${courseDetails.id}/progress`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      progressPercent: Math.round(progress),
+                      lastLessonId: lessonId,
+                      lastTimestampSeconds: time,
+                    }),
+                  })
+                    .then(() => window.dispatchEvent(new Event("skillmind:progress-updated")))
+                    .catch(() => {});
+                }, 3_000);
               }}
               onEnded={nextChapter ? handleAutoPlayNext : undefined}
             />

@@ -91,6 +91,29 @@ export default function BillingPage() {
     );
   }
 
+  if (!loading && !error && !subscription) {
+    return (
+      <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <header>
+          <h1 className="text-3xl font-semibold tracking-tight text-white">Billing & Payment</h1>
+          <p className="mt-2 text-sm text-white/60">Manage your subscription plan, payment methods, and billing information securely.</p>
+        </header>
+        <div className="rounded-2xl border border-white/5 bg-linear-to-br from-[#161622] to-[#0A0A0F] p-12 flex flex-col items-center justify-center text-center">
+          <CreditCard className="w-12 h-12 text-white/20 mb-4" />
+          <h3 className="text-lg font-medium text-white mb-2">No Active Subscription</h3>
+          <p className="text-white/50 text-sm mb-6">You don't have an active plan yet. Subscribe to unlock all features.</p>
+          <a href="/register/billing" className="px-5 py-2.5 bg-white text-black text-sm font-semibold rounded-xl hover:bg-white/90 transition">
+            View Plans
+          </a>
+        </div>
+        <div className="mt-8 flex items-center justify-center gap-2 text-sm text-white/40">
+          <ShieldCheck className="h-4 w-4" />
+          <p>All payments are securely processed by Stripe. We do not store your credit card information.</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 relative">
       {notification && (

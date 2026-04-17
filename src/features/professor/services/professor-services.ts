@@ -46,8 +46,9 @@ api.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       if (typeof window !== "undefined") {
-        document.cookie = "activeProfileId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        window.location.href = "/login";
+        fetch("/api/sessions/select-profile", { method: "DELETE" }).finally(() => {
+          window.location.href = "/login";
+        });
       }
     }
     return Promise.reject(error);

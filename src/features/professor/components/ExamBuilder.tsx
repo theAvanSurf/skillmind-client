@@ -65,10 +65,10 @@ function AddQuestionForm({ examId, onDone }: AddQuestionFormProps) {
 
   const submit = async () => {
     const filteredOptions =
-      type === "OpenText" ? [] : options.filter((o) => o.text.trim())
+      type === "OpenText" ? [] : options.filter((o) => o.text.trim()).map((o) => ({ optionText: o.text, isCorrect: o.isCorrect }))
     await addQuestion.mutateAsync({
       examId,
-      req: { text, questionType: type, pointValue: points, order: Math.floor(Date.now() / 1000), options: filteredOptions },
+      req: { questionText: text, questionType: type, points, order: Math.floor(Date.now() / 1000), options: filteredOptions },
     })
     onDone()
   }
@@ -183,7 +183,6 @@ function AddQuestionForm({ examId, onDone }: AddQuestionFormProps) {
 
 function QuestionRow({ q, index }: { q: ExamQuestion; index: number }) {
   const [open, setOpen] = useState(false)
-  const correct = q.options.find((o) => o.isCorrect)
 
   return (
     <div className="rounded-xl border border-white/8 bg-white/[0.02] overflow-hidden">
@@ -194,9 +193,9 @@ function QuestionRow({ q, index }: { q: ExamQuestion; index: number }) {
         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/8 text-xs font-bold text-white/50">
           {index + 1}
         </span>
-        <span className="flex-1 text-sm text-white/80 line-clamp-1">{q.text}</span>
+        <span className="flex-1 text-sm text-white/80 line-clamp-1">{q.questionText}</span>
         <span className="text-xs text-white/25">{q.questionType}</span>
-        <span className="text-xs text-white/25">{q.pointValue}pt</span>
+        <span className="text-xs text-white/25">{q.points}pt</span>
         {open ? <ChevronUp size={13} className="text-white/30" /> : <ChevronDown size={13} className="text-white/30" />}
       </button>
       {open && (
@@ -204,7 +203,7 @@ function QuestionRow({ q, index }: { q: ExamQuestion; index: number }) {
           {q.options.map((opt) => (
             <div key={opt.id} className={`flex items-center gap-2 text-sm ${opt.isCorrect ? "text-emerald-400" : "text-white/50"}`}>
               {opt.isCorrect ? <CheckCircle size={13} /> : <Circle size={13} className="text-white/20" />}
-              {opt.text}
+              {opt.optionText}
             </div>
           ))}
           {q.questionType === "OpenText" && (
@@ -232,17 +231,17 @@ function ExamPanel({ examId }: { examId: string }) {
         <div>
           <h3 className="font-semibold text-white">{exam.title}</h3>
           <p className="text-xs text-white/35 mt-0.5">
-            {exam.questions.length} questions · Passing: {exam.passingScore}%
-            {exam.timeLimitMinutes ? ` · ${exam.timeLimitMinutes} min` : ""}
+            {exam.questionCount ?? exam.questions.length} questions · Passing: {exam.passingScore}pts
+            {exam.durationMinutes ? ` · ${exam.durationMinutes} min` : ""}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          {exam.isPublished ? (
+          {exam.status === "Published" ? (
             <span className="rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">Published</span>
           ) : (
             <button
               onClick={() => publishExam.mutate(examId)}
-              disabled={publishExam.isPending || exam.questions.length === 0}
+              disabled={publishExam.isPending || (exam.questionCount ?? exam.questions.length) === 0}
               className="flex items-center gap-1 rounded-xl bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-emerald-600 disabled:opacity-50"
             >
               {publishExam.isPending ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
@@ -261,7 +260,7 @@ function ExamPanel({ examId }: { examId: string }) {
       {addingQ ? (
         <AddQuestionForm examId={examId} onDone={() => setAddingQ(false)} />
       ) : (
-        !exam.isPublished && (
+        exam.status !== "Published" && (
           <button
             onClick={() => setAddingQ(true)}
             className="flex items-center gap-1.5 text-xs text-blue-400 hover:text-blue-300 transition"
@@ -277,7 +276,7 @@ function ExamPanel({ examId }: { examId: string }) {
 // ── Create exam form ───────────────────────────────────────────────────────────
 
 function CreateExamForm({ courseId, onDone }: { courseId: string; onDone: () => void }) {
-  const [form, setForm] = useState({ title: "", passingScore: 70, timeLimitMinutes: "" })
+  const [form, setForm] = useState({ title: "", passingScore: 70, durationMinutes: "" })
   const createExam = useCreateExam()
 
   const submit = async () => {
@@ -285,7 +284,7 @@ function CreateExamForm({ courseId, onDone }: { courseId: string; onDone: () => 
       courseId,
       title: form.title,
       passingScore: form.passingScore,
-      timeLimitMinutes: form.timeLimitMinutes ? Number(form.timeLimitMinutes) : undefined,
+      durationMinutes: form.durationMinutes ? Number(form.durationMinutes) : undefined,
     })
     onDone()
   }
@@ -311,9 +310,9 @@ function CreateExamForm({ courseId, onDone }: { courseId: string; onDone: () => 
         <div className="flex-1">
           <input
             type="number"
-            value={form.timeLimitMinutes}
-            onChange={(e) => setForm((f) => ({ ...f, timeLimitMinutes: e.target.value }))}
-            placeholder="Time limit (min, optional)"
+            value={form.durationMinutes}
+            onChange={(e) => setForm((f) => ({ ...f, durationMinutes: e.target.value }))}
+            placeholder="Duration (min, optional)"
             className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white outline-none focus:border-blue-500/40"
           />
         </div>

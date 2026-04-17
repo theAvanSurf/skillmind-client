@@ -51,15 +51,14 @@ export interface VideoPlayerProps {
   onProgressUpdate?: (progress: number, currentTime: number) => void;
   /** Called when playback ends */
   onEnded?: () => void;
-  /** localStorage key for resume. Defaults to videoUrl. */
-  storageKey?: string;
+  /** Seconds to seek to when the video first loads (from backend progress) */
+  startTime?: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STORAGE_PREFIX = "vp:";
 const CONTROLS_HIDE_MS = 3_000;
-const SAVE_INTERVAL_MS = 5_000;
+const SAVE_INTERVAL_MS = 2_000;
 
 let shakaModulePromise: Promise<typeof import("shaka-player")> | null = null;
 
@@ -105,7 +104,7 @@ export function VideoPlayer({
   episodeNumber,
   onProgressUpdate,
   onEnded,
-  storageKey,
+  startTime,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -144,6 +143,9 @@ export function VideoPlayer({
     () => `${STORAGE_PREFIX}${storageKey ?? videoUrl}`,
     [storageKey, videoUrl]
   );
+
+  const progressKeyRef = useRef(progressKey);
+  useEffect(() => { progressKeyRef.current = progressKey; }, [progressKey]);
 
   const progressPct = useMemo(
     () => (duration > 0 ? (currentTime / duration) * 100 : 0),
@@ -288,7 +290,9 @@ export function VideoPlayer({
       if (cancelled) return;
 
       try {
-        await player.load(videoUrl);
+        const savedRaw = localStorage.getItem(progressKeyRef.current);
+        const startAt = savedRaw ? parseFloat(savedRaw) : 0;
+        await player.load(videoUrl, isFinite(startAt) && startAt > 0 ? startAt : undefined);
         if (cancelled) return;
 
         setPlayerState("ready");
@@ -464,20 +468,40 @@ export function VideoPlayer({
   );
 
   // ── Video element event handlers ───────────────────────────────────────────
+  const seekToSaved = useCallback((video: HTMLVideoElement) => {
+    if (!adaptive) {
+      const saved = localStorage.getItem(progressKeyRef.current);
+      if (saved) {
+        const t = parseFloat(saved);
+        if (isFinite(t) && t > 0 && video.duration > 0 && t < video.duration - 1) {
+          video.currentTime = t;
+        }
+      }
+    }
+  }, [adaptive]);
+
   const handleLoadedMetadata = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     setDuration(video.duration);
     setPlayerState("ready");
+    seekToSaved(video);
+  }, [seekToSaved]);
 
-    const saved = localStorage.getItem(progressKey);
-    if (saved) {
-      const t = parseFloat(saved);
-      if (isFinite(t) && t > 0 && t < video.duration - 2) {
-        video.currentTime = t;
-      }
+  const hasSeekedRef = useRef(false);
+  useEffect(() => { hasSeekedRef.current = false; }, [progressKey]);
+
+  const handleCanPlay = useCallback(() => {
+    const video = videoRef.current;
+    setError(null);
+    setPlayerState((prev) =>
+      prev === "idle" || prev === "loading" ? "ready" : prev
+    );
+    if (video && !hasSeekedRef.current) {
+      hasSeekedRef.current = true;
+      seekToSaved(video);
     }
-  }, [progressKey]);
+  }, [seekToSaved]);
 
   const handleTimeUpdate = useCallback(() => {
     const video = videoRef.current;
@@ -489,13 +513,6 @@ export function VideoPlayer({
       onProgressUpdate((t / d) * 100, t);
     }
   }, [onProgressUpdate]);
-
-  const handleCanPlay = useCallback(() => {
-    setError(null);
-    setPlayerState((prev) =>
-      prev === "idle" || prev === "loading" ? "ready" : prev
-    );
-  }, []);
 
   const handlePlay = useCallback(() => setPlayerState("playing"), []);
 
