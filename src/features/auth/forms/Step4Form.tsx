@@ -50,12 +50,6 @@ export default function PlanSelectionStep() {
     setRegistrationDraft({ plan: selectedPlan })
     setApiError("")
 
-    // If already signed up (backtracking), skip the API call
-    if (completedStep >= 3) {
-      router.push("/register/step5")
-      return
-    }
-
     // Create account for both free and premium — billing happens after email verify
     setLoading(true)
     try {

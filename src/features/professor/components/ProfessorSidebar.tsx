@@ -11,7 +11,9 @@ import {
   Users,
   Video,
   ChevronRight,
+  LogOut,
 } from "lucide-react"
+import { useSignOut } from "@/features/auth/hooks/useSignOut"
 
 const navItems = [
   { label: "Dashboard", href: "/professor/dashboard", icon: LayoutDashboard },
@@ -25,6 +27,7 @@ const navItems = [
 
 export default function ProfessorSidebar() {
   const pathname = usePathname()
+  const { signOut, isLoading } = useSignOut()
 
   return (
     <aside className="w-60 shrink-0 border-r border-white/5 bg-[#0F0F16] hidden md:flex flex-col">
@@ -52,6 +55,17 @@ export default function ProfessorSidebar() {
           )
         })}
       </nav>
+
+      <div className="px-3 py-4 border-t border-white/5">
+        <button
+          onClick={() => void signOut()}
+          disabled={isLoading}
+          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-white/45 transition-all hover:bg-red-500/10 hover:text-red-400 disabled:opacity-50"
+        >
+          <LogOut size={16} className="text-white/30 group-hover:text-red-400" />
+          <span>{isLoading ? "Signing out…" : "Sign Out"}</span>
+        </button>
+      </div>
     </aside>
   )
 }

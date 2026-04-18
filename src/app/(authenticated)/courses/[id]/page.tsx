@@ -2,16 +2,130 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { Play, Plus, ChevronDown, AlertTriangle, Clock } from "lucide-react";
+import { Play, Plus, ChevronDown, AlertTriangle, Clock, Lock, CreditCard, CheckCircle, Loader2, X } from "lucide-react";
+import { useTracking } from "@/features/tracking/hooks/useTracking";
+import { Elements, PaymentElement, useStripe, useElements } from "@stripe/react-stripe-js";
 import {
   fetchCourseDetails,
   resolveSeason,
+  getEnrollmentStatus,
+  createPurchaseIntent,
+  confirmEnrollment,
   type CourseDetailsModel,
   type CourseSeason,
+  type EnrollmentStatus,
 } from "@/features/courses/services/course-details.service";
 import { resolveStoredProgress } from "@/features/courses/utils/course-progress";
+import { stripePromise } from "@/lib/stripe";
 
 type Tab = "episodes" | "related" | "details";
+
+// ── Purchase modal ────────────────────────────────────────────────────────────
+
+function PurchaseForm({
+  courseId,
+  paymentIntentId,
+  amount,
+  onSuccess,
+  onClose,
+}: {
+  courseId: string;
+  paymentIntentId: string;
+  amount: number;
+  onSuccess: () => void;
+  onClose: () => void;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!stripe || !elements) return;
+
+    setLoading(true);
+    setError("");
+
+    const { error: submitError } = await elements.submit();
+    if (submitError) {
+      setError(submitError.message ?? "Payment validation failed");
+      setLoading(false);
+      return;
+    }
+
+    const { error: confirmError } = await stripe.confirmPayment({
+      elements,
+      confirmParams: {
+        return_url: `${window.location.origin}/courses/${courseId}?enrolled=1`,
+      },
+      redirect: "if_required",
+    });
+
+    if (confirmError) {
+      setError(confirmError.message ?? "Payment failed");
+      setLoading(false);
+    } else {
+      // Payment succeeded — confirm enrollment server-side
+      try {
+        await confirmEnrollment(courseId, paymentIntentId);
+      } catch {
+        // Non-fatal: webhook will handle it as fallback
+      }
+      onSuccess();
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#13131f] p-6 shadow-2xl">
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h2 className="text-lg font-bold text-white">Complete Purchase</h2>
+            <p className="text-sm text-white/45 mt-0.5">
+              ${amount % 1 === 0 ? amount : amount.toFixed(2)} one-time payment
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-white/50 hover:text-white transition"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <PaymentElement />
+
+          {error && (
+            <div className="flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/10 px-3 py-2 text-xs text-red-400">
+              <AlertTriangle size={13} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={!stripe || loading}
+            className="w-full rounded-xl bg-blue-600 py-3 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {loading ? (
+              <>
+                <Loader2 size={15} className="animate-spin" />
+                Processing…
+              </>
+            ) : (
+              <>
+                <CreditCard size={15} />
+                Pay ${amount % 1 === 0 ? amount : amount.toFixed(2)}
+              </>
+            )}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 export default function CourseDetailsPage() {
   const { id } = useParams<{ id: string }>();
@@ -26,6 +140,13 @@ export default function CourseDetailsPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("episodes");
   const [seasonOpen, setSeasonOpen] = useState(false);
+  const [enrollmentStatus, setEnrollmentStatus] = useState<EnrollmentStatus | null>(null);
+  const [purchaseModal, setPurchaseModal] = useState<{ clientSecret: string; paymentIntentId: string; amount: number } | null>(null);
+  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [purchaseLoading, setPurchaseLoading] = useState(false);
+  const [purchaseError, setPurchaseError] = useState<string | null>(null);
+
+  const { trackEvent } = useTracking();
 
   const loadCourse = useCallback(async () => {
     setIsLoading(true);
@@ -40,6 +161,7 @@ export default function CourseDetailsPage() {
       const p = resolveStoredProgress(data.id, data.progress, data.duration);
       setSavedProgressPct(p.effectiveProgress);
       setSavedTimestamp(p.storedTimestamp);
+      trackEvent(data.id, "clicked", data.category ?? undefined, data.tags ? String(data.tags) : undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load course.");
     } finally {
@@ -47,7 +169,25 @@ export default function CourseDetailsPage() {
     }
   }, [id, searchParams]);
 
+  const loadEnrollmentStatus = useCallback(async () => {
+    try {
+      const status = await getEnrollmentStatus(id);
+      setEnrollmentStatus(status);
+    } catch {
+      // Non-fatal — enrollment status defaults to null (show play)
+    }
+  }, [id]);
+
   useEffect(() => { void loadCourse(); }, [loadCourse]);
+  useEffect(() => { void loadEnrollmentStatus(); }, [loadEnrollmentStatus]);
+
+  // Handle redirect back from Stripe with ?enrolled=1
+  useEffect(() => {
+    if (searchParams.get("enrolled") === "1") {
+      setPaymentSuccess(true);
+      void loadEnrollmentStatus();
+    }
+  }, [searchParams, loadEnrollmentStatus]);
 
   const selectedSeason = useMemo(() => {
     if (!course) return null;
@@ -64,13 +204,40 @@ export default function CourseDetailsPage() {
     ? `Resume ${Math.floor(savedTimestamp / 60)}:${String(Math.floor(savedTimestamp % 60)).padStart(2, "0")}`
     : null;
 
+  const handlePurchase = useCallback(async () => {
+    if (!course) return;
+    setPurchaseLoading(true);
+    setPurchaseError(null);
+    try {
+      const intent = await createPurchaseIntent(course.id);
+      if (!intent.clientSecret) {
+        // Free course — immediately enrolled
+        setPaymentSuccess(true);
+        await loadEnrollmentStatus();
+        return;
+      }
+      setPurchaseModal({ clientSecret: intent.clientSecret, paymentIntentId: intent.paymentIntentId, amount: intent.amount });
+    } catch (err) {
+      setPurchaseError(err instanceof Error ? err.message : "Unable to start purchase");
+    } finally {
+      setPurchaseLoading(false);
+    }
+  }, [course, loadEnrollmentStatus]);
+
+  const handlePaymentSuccess = useCallback(async () => {
+    setPurchaseModal(null);
+    setPaymentSuccess(true);
+    await loadEnrollmentStatus();
+  }, [loadEnrollmentStatus]);
+
   const handlePlay = useCallback(() => {
     if (!course || !selectedSeason) return;
+    trackEvent(course.id, "started", course.category ?? undefined, course.tags ? String(course.tags) : undefined);
     const first = selectedSeason.lessons[0];
     router.push(first
       ? `/my-courses/${course.id}?season=${selectedSeason.id}&lesson=${first.id}`
       : `/my-courses/${course.id}`);
-  }, [course, selectedSeason, router]);
+  }, [course, selectedSeason, router, trackEvent]);
 
   const handlePlayLesson = useCallback((lessonId: string, seasonId: string) => {
     if (!course) return;
@@ -133,7 +300,7 @@ export default function CourseDetailsPage() {
       {/* ── HERO ────────────────────────────────────────────────────────── */}
       <div className="relative h-[min(60vw,540px)] w-full overflow-hidden bg-black">
         <img
-          src={course.image}
+          src={course.image || undefined}
           alt={course.title}
           className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
         />
@@ -185,20 +352,55 @@ export default function CourseDetailsPage() {
           )}
 
           {/* CTAs */}
-          <div className="mt-5 flex items-center gap-3">
-            <button
-              onClick={handlePlay}
-              className="inline-flex items-center gap-2 rounded-md bg-white px-5 py-2.5 text-sm font-bold text-black transition hover:bg-white/88 active:scale-95"
-            >
-              <Play size={16} fill="black" />
-              {isInProgress && resumeLabel ? resumeLabel : (isInProgress ? "Resume" : "Play")}
-            </button>
-            <button
-              title="Add to list"
-              className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/50 bg-white/15 text-white transition hover:bg-white/25"
-            >
-              <Plus size={18} />
-            </button>
+          <div className="mt-5 flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              {enrollmentStatus?.purchaseRequired && !enrollmentStatus.isEnrolled && !paymentSuccess ? (
+                <button
+                  onClick={() => void handlePurchase()}
+                  disabled={purchaseLoading}
+                  className="inline-flex items-center gap-2 rounded-md bg-blue-600 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-blue-700 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {purchaseLoading ? (
+                    <><Loader2 size={15} className="animate-spin" />Loading…</>
+                  ) : (
+                    <><CreditCard size={16} />Purchase for ${course.price % 1 === 0 ? course.price : course.price.toFixed(2)}</>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handlePlay}
+                  className="inline-flex items-center gap-2 rounded-md bg-white px-5 py-2.5 text-sm font-bold text-black transition hover:bg-white/88 active:scale-95"
+                >
+                  <Play size={16} fill="black" />
+                  {isInProgress && resumeLabel ? resumeLabel : (isInProgress ? "Resume" : "Play")}
+                </button>
+              )}
+              <button
+                title="Add to my courses"
+                onClick={() => {
+                  trackEvent(course.id, "clicked", course.category ?? undefined, course.tags ? String(course.tags) : undefined);
+                  void handlePurchase();
+                }}
+                disabled={purchaseLoading}
+                className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/50 bg-white/15 text-white transition hover:bg-white/25 disabled:opacity-50"
+              >
+                <Plus size={18} />
+              </button>
+            </div>
+
+            {paymentSuccess && (
+              <div className="flex items-center gap-1.5 text-[0.75rem] text-emerald-400">
+                <CheckCircle size={13} />
+                <span>Enrolled! You now have full access.</span>
+              </div>
+            )}
+
+            {purchaseError && (
+              <div className="flex items-center gap-1.5 text-[0.75rem] text-red-400">
+                <AlertTriangle size={13} />
+                <span>{purchaseError}</span>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -272,7 +474,7 @@ export default function CourseDetailsPage() {
                         >
                           <div className="relative aspect-video overflow-hidden bg-black/40">
                             <img
-                              src={course.image}
+                              src={course.image || undefined}
                               alt={lesson.title}
                               className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
                             />
@@ -313,7 +515,7 @@ export default function CourseDetailsPage() {
                   onClick={() => router.push(`/courses/${rc.id}`)}
                   className="group overflow-hidden rounded-xl border border-white/8 bg-white/4 text-left transition hover:-translate-y-1 hover:border-white/20"
                 >
-                  <img src={rc.image} alt={rc.title} className="aspect-video w-full object-cover" />
+                  <img src={rc.image || undefined} alt={rc.title} className="aspect-video w-full object-cover" />
                   <div className="p-2.5">
                     {rc.category && (
                       <p className="text-[0.6rem] font-bold uppercase tracking-wider text-blue-300">{rc.category}</p>
@@ -343,6 +545,33 @@ export default function CourseDetailsPage() {
           </dl>
         )}
       </div>
+
+      {/* ── PURCHASE MODAL ──────────────────────────────────────────────── */}
+      {purchaseModal && (
+        <Elements
+          stripe={stripePromise}
+          options={{
+            clientSecret: purchaseModal.clientSecret,
+            appearance: {
+              theme: "night",
+              variables: {
+                colorPrimary: "#3b82f6",
+                colorBackground: "#13131f",
+                colorText: "#ffffff",
+                borderRadius: "12px",
+              },
+            },
+          }}
+        >
+          <PurchaseForm
+            courseId={id}
+            paymentIntentId={purchaseModal.paymentIntentId}
+            amount={purchaseModal.amount}
+            onSuccess={() => void handlePaymentSuccess()}
+            onClose={() => setPurchaseModal(null)}
+          />
+        </Elements>
+      )}
     </div>
   );
 }

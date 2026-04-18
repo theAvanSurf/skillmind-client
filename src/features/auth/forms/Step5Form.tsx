@@ -113,6 +113,7 @@ export default function VerificationStep() {
         try {
           await authServices.createProfessorProfile(
             {
+              userId: loginResponse.id || userId || "",
               bio: draft.bio ?? "",
               expertise: draft.expertise ?? "",
               yearsOfExperience: draft.yearsOfExperience ?? 0,
@@ -148,7 +149,7 @@ export default function VerificationStep() {
 
       if (draft.role === "professor") {
         setCompletedStep(6)
-        router.push("/register/welcome")
+        router.push("/professor/dashboard")
         return
       }
 

@@ -34,7 +34,7 @@ function AddSeasonForm({ courseId, onDone }: AddSeasonFormProps) {
   const [title, setTitle] = useState("")
   const qc = useQueryClient()
   const mutation = useMutation({
-    mutationFn: () => svc.createSeason({ courseId, title, order: Date.now() }),
+    mutationFn: () => svc.createSeason({ courseId, title, order: Math.floor(Date.now() / 1000) }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: professorKeys.course(courseId) })
       onDone()
@@ -68,15 +68,52 @@ interface AddLessonFormProps {
 }
 
 function AddLessonForm({ seasonId, courseId, onDone }: AddLessonFormProps) {
-  const [form, setForm] = useState({ title: "", videoUrl: "" })
+  const [form, setForm] = useState({ title: "", videoUrl: "", durationSeconds: 0 })
+  const [uploading, setUploading] = useState(false)
   const qc = useQueryClient()
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      
+      const res = await fetch("/api/media-upload", {
+        method: "POST",
+        body: formData,
+      })
+      const data = await res.json()
+      
+      if (res.ok && data.secure_url) {
+        // Transform the Cloudinary URL to adaptive bitrate streaming manifest
+        const parsedUrl = new URL(data.secure_url)
+        const pathParts = parsedUrl.pathname.split('/upload/')
+        if (pathParts.length === 2 && (data.resource_type === 'video' || data.format === 'mp4' || data.format === 'mov')) {
+            let optimizedPath = `${pathParts[0]}/upload/sp_auto/${pathParts[1]}`
+            optimizedPath = optimizedPath.replace(/\.[^/.]+$/, ".mpd")
+            parsedUrl.pathname = optimizedPath
+            setForm((f) => ({ ...f, videoUrl: parsedUrl.toString(), durationSeconds: data.duration ? Math.round(data.duration) : 0 }))
+        } else {
+            setForm((f) => ({ ...f, videoUrl: data.secure_url, durationSeconds: data.duration ? Math.round(data.duration) : 0 }))
+        }
+      }
+    } catch (error) {
+      console.error("Upload failed", error)
+    } finally {
+      setUploading(false)
+    }
+  }
+
   const mutation = useMutation({
     mutationFn: () =>
       svc.createLesson({
         seasonId,
         title: form.title,
         videoUrl: form.videoUrl || undefined,
-        order: Date.now(),
+        durationSeconds: form.durationSeconds,
+        order: Math.floor(Date.now() / 1000),
       }),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: professorKeys.course(courseId) })
@@ -91,17 +128,23 @@ function AddLessonForm({ seasonId, courseId, onDone }: AddLessonFormProps) {
         placeholder="Lesson title"
         className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/10"
       />
-      <input
-        value={form.videoUrl}
-        onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
-        placeholder="Video URL (YouTube or direct)"
-        className="w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/10"
-      />
+      <div className="flex items-center gap-2">
+        <input
+          value={form.videoUrl}
+          onChange={(e) => setForm((f) => ({ ...f, videoUrl: e.target.value }))}
+          placeholder="Video URL manifest (.mpd) or YouTube URL"
+          className="flex-1 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm text-white placeholder-white/25 outline-none focus:border-blue-500/40 focus:ring-2 focus:ring-blue-500/10"
+        />
+        <label className="cursor-pointer rounded-xl bg-white/10 px-3 py-2 text-sm font-medium text-white transition hover:bg-white/20 whitespace-nowrap">
+          {uploading ? "Uploading..." : "Upload File"}
+          <input type="file" accept="video/*" className="hidden" onChange={handleUpload} disabled={uploading} />
+        </label>
+      </div>
       <div className="flex items-center justify-end gap-2">
         <button onClick={onDone} className="text-xs text-white/30 hover:text-white/60 transition">Cancel</button>
         <button
           onClick={() => mutation.mutate()}
-          disabled={!form.title.trim() || mutation.isPending}
+          disabled={!form.title.trim() || mutation.isPending || uploading}
           className="flex items-center gap-1 rounded-xl bg-blue-500 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-blue-600 disabled:opacity-50"
         >
           {mutation.isPending ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />}

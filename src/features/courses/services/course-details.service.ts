@@ -4,6 +4,7 @@ export type CourseLesson = {
   id: string;
   title: string;
   duration: string;
+  videoUrl?: string; // Added to fix the build
   kind: "lesson" | "exercise";
 };
 
@@ -24,9 +25,67 @@ export type CourseDetailsModel = {
   image: string;
   progress: number;
   videoUrl: string;
+  price: number;
+  professorId?: string;
   seasons: CourseSeason[];
   relatedCourses: any[];
 };
+
+export type EnrollmentStatus = {
+  isEnrolled: boolean;
+  purchaseRequired: boolean;
+  price: number;
+};
+
+export type PurchaseIntent = {
+  clientSecret: string;
+  paymentIntentId: string;
+  amount: number;
+};
+
+export type EnrolledCourse = {
+  id: string;
+  title: string;
+  thumbnailUrl: string;
+  category?: string;
+  totalSeasons: number;
+  totalLessons: number;
+  progressPercent: number;
+  enrolledAt: string;
+};
+
+export async function confirmEnrollment(courseId: string, paymentIntentId: string): Promise<void> {
+  const res = await fetch(`/api/courses/${courseId}/confirm-enrollment`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paymentIntentId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "Enrollment confirmation failed" }));
+    throw new Error(err.message || "Enrollment confirmation failed");
+  }
+}
+
+export async function getEnrolledCourses(): Promise<EnrolledCourse[]> {
+  const res = await fetch("/api/courses/my-enrollments");
+  if (!res.ok) throw new Error("Failed to fetch enrolled courses");
+  return res.json();
+}
+
+export async function getEnrollmentStatus(courseId: string): Promise<EnrollmentStatus> {
+  const res = await fetch(`/api/courses/${courseId}/enrollment-status`);
+  if (!res.ok) throw new Error("Failed to fetch enrollment status");
+  return res.json();
+}
+
+export async function createPurchaseIntent(courseId: string): Promise<PurchaseIntent> {
+  const res = await fetch(`/api/courses/${courseId}/purchase`, { method: "POST" });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ message: "Purchase failed" }));
+    throw new Error(err.message || "Purchase failed");
+  }
+  return res.json();
+}
 
 type FetchCourseDetailsOptions = {
   simulateFailure?: boolean;
@@ -145,6 +204,7 @@ export async function fetchCourseDetails(
       lessons: (s.lessons || []).map((l: any) => ({
         id: l.id,
         title: l.title,
+        videoUrl: l.videoUrl,
         duration: Math.ceil((l.durationSeconds || 0) / 60) + " mins",
         kind: "lesson"
       }))
@@ -171,6 +231,8 @@ export async function fetchCourseDetails(
           category: course.category,
           tags: course.tags,
           image: course.thumbnailUrl,
+          price: course.price ?? 0,
+          professorId: course.professorId,
           progress: 0,
           videoUrl: "",
           seasons: mappedSeasons,
@@ -185,6 +247,8 @@ export async function fetchCourseDetails(
           category: course.category,
           tags: course.tags,
           image: course.thumbnailUrl,
+          price: course.price ?? 0,
+          professorId: course.professorId,
           progress: 0,
           videoUrl: "",
           seasons: mappedSeasons,

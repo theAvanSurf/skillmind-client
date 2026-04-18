@@ -9,7 +9,7 @@ export default async function ProfessorLayout({ children }: { children: ReactNod
   if (!token) redirect("/login")
 
   return (
-    <div className="flex min-h-[calc(100vh-64px)]">
+    <div className="flex h-screen w-screen overflow-hidden bg-[#181823] text-white">
       <ProfessorSidebar />
       <main className="flex-1 overflow-y-auto p-6 lg:p-8">
         {children}

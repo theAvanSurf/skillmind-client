@@ -28,9 +28,14 @@ httpClient.interceptors.request.use(
     async (config) => {
         const cookieStore = await cookies();
         const token = cookieStore.get("token")?.value;
+        const activeProfileId = cookieStore.get("activeProfileId")?.value;
 
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;
+        }
+
+        if (activeProfileId) {
+            config.headers["X-Profile-Id"] = activeProfileId;
         }
 
         if (process.env.NODE_ENV === "development" && process.env.DEBUG_HTTP === "1") {

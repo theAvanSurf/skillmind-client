@@ -31,6 +31,7 @@ type PlayerState =
   | "playing"
   | "buffering"
   | "error"
+  | "processing"
   | "ended";
 
 interface QualityTrack {
@@ -50,15 +51,14 @@ export interface VideoPlayerProps {
   onProgressUpdate?: (progress: number, currentTime: number) => void;
   /** Called when playback ends */
   onEnded?: () => void;
-  /** localStorage key for resume. Defaults to videoUrl. */
-  storageKey?: string;
+  /** Seconds to seek to when the video first loads (from backend progress) */
+  startTime?: number;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const STORAGE_PREFIX = "vp:";
 const CONTROLS_HIDE_MS = 3_000;
-const SAVE_INTERVAL_MS = 5_000;
+const SAVE_INTERVAL_MS = 2_000;
 
 let shakaModulePromise: Promise<typeof import("shaka-player")> | null = null;
 
@@ -104,13 +104,19 @@ export function VideoPlayer({
   episodeNumber,
   onProgressUpdate,
   onEnded,
-  storageKey,
+  startTime,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const shakaRef = useRef<any>(null);
   const controlsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Stable listener refs so event handlers always reflect the current load session
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onShakaErrorRef = useRef<((e: any) => void) | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const onShakaBufferingRef = useRef<((e: any) => void) | null>(null);
+  const [shakaReady, setShakaReady] = useState(false);
 
   // ── State ──────────────────────────────────────────────────────────────────
   const [playerState, setPlayerState] = useState<PlayerState>("idle");
@@ -138,6 +144,9 @@ export function VideoPlayer({
     [storageKey, videoUrl]
   );
 
+  const progressKeyRef = useRef(progressKey);
+  useEffect(() => { progressKeyRef.current = progressKey; }, [progressKey]);
+
   const progressPct = useMemo(
     () => (duration > 0 ? (currentTime / duration) * 100 : 0),
     [currentTime, duration]
@@ -155,35 +164,16 @@ export function VideoPlayer({
     void loadShakaModule();
   }, [adaptive]);
 
-  // ── Shaka init / teardown ──────────────────────────────────────────────────
+  // ── Effect 1: Shaka player lifecycle (create once, destroy on unmount) ───────
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !adaptive) return;
 
-    if (!adaptive) {
-      // Native path — video src set via JSX prop, just reset state
-      setQualityTracks([]);
-      setSelectedQuality(null);
-      setPlayerState("loading");
-      return;
-    }
+    let destroyed = false;
 
-    let cancelled = false;
-
-    const init = async () => {
-      // Destroy any existing Shaka instance
-      if (shakaRef.current) {
-        await shakaRef.current.destroy();
-        shakaRef.current = null;
-      }
-
-      setError(null);
-      setQualityTracks([]);
-      setSelectedQuality(null);
-      setPlayerState("loading");
-
+    const setup = async () => {
       const mod = await loadShakaModule();
-      if (cancelled) return;
+      if (destroyed) return;
 
       const shaka = mod.default;
       shaka.polyfill.installAll();
@@ -200,33 +190,113 @@ export function VideoPlayer({
           bufferingGoal: 10,
           rebufferingGoal: 2,
           bufferBehind: 30,
+          retryParameters: { maxAttempts: 2, baseDelay: 500, backoffFactor: 2, fuzzFactor: 0.5, timeout: 15_000 },
+        },
+        manifest: {
+          retryParameters: { maxAttempts: 1, baseDelay: 0, backoffFactor: 1, fuzzFactor: 0, timeout: 15_000 },
         },
       });
 
       await player.attach(video);
+      if (destroyed) { void player.destroy(); return; }
+
       shakaRef.current = player;
 
+      // Stable listeners — delegate to refs updated each load session
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      player.addEventListener("error", (e: any) => {
-        if (cancelled) return;
-        console.error("[Shaka] Error:", e.detail);
-        setError("A streaming error occurred. Please try again.");
-        setPlayerState("error");
-      });
+      player.addEventListener("error", (e: any) => onShakaErrorRef.current?.(e));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      player.addEventListener("buffering", (e: any) => onShakaBufferingRef.current?.(e));
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      player.addEventListener("buffering", (e: any) => {
-        if (cancelled) return;
-        if (e.buffering) {
-          setPlayerState("buffering");
-        } else {
-          setPlayerState(video.paused ? "ready" : "playing");
+      setShakaReady(true);
+    };
+
+    setup();
+
+    return () => {
+      destroyed = true;
+      setShakaReady(false);
+      if (shakaRef.current) {
+        void shakaRef.current.destroy();
+        shakaRef.current = null;
+      }
+    };
+  }, [adaptive]);
+
+  // ── Effect 2: URL loading (reuses the existing player, no teardown) ──────────
+  useEffect(() => {
+    const video = videoRef.current;
+
+    if (!videoUrl) {
+      setError("No video available for this lesson.");
+      setPlayerState("error");
+      return;
+    }
+
+    if (!adaptive) {
+      setQualityTracks([]);
+      setSelectedQuality(null);
+      setPlayerState("loading");
+      return;
+    }
+
+    if (!shakaReady || !shakaRef.current) return;
+
+    const player = shakaRef.current;
+    let cancelled = false;
+
+    // Wire up handlers for this load session — listeners on the player are stable
+    // wrappers that delegate here, so they always reflect the current cancelled flag.
+    onShakaErrorRef.current = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (cancelled) return;
+      if (e.detail?.code === 1001 && e.detail?.data?.[1] === 423) {
+        setPlayerState("processing");
+        return;
+      }
+      console.error("[Shaka] Error:", e.detail);
+      setError("A streaming error occurred. Please try again.");
+      setPlayerState("error");
+    };
+
+    onShakaBufferingRef.current = (e: any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+      if (cancelled) return;
+      if (e.buffering) {
+        setPlayerState("buffering");
+      } else {
+        setPlayerState(video?.paused ? "ready" : "playing");
+      }
+    };
+
+    const load = async () => {
+      setError(null);
+      setQualityTracks([]);
+      setSelectedQuality(null);
+      setPlayerState("loading");
+
+      // Pre-check via server-side proxy — avoids CORS hiding a 423 status
+      try {
+        const pre = await fetch(
+          `/api/check-video?url=${encodeURIComponent(videoUrl)}`,
+          { cache: "no-store" }
+        );
+        const { status } = await pre.json() as { status: number };
+        if (status === 423) {
+          if (!cancelled) setPlayerState("processing");
+          return;
         }
-      });
+      } catch {
+        // Proxy unavailable — let Shaka attempt and fail fast
+      }
+      if (cancelled) return;
 
       try {
-        await player.load(videoUrl);
+        const savedRaw = localStorage.getItem(progressKeyRef.current);
+        const startAt = savedRaw ? parseFloat(savedRaw) : 0;
+        await player.load(videoUrl, isFinite(startAt) && startAt > 0 ? startAt : undefined);
         if (cancelled) return;
+
+        setPlayerState("ready");
+        void video?.play().catch(() => {/* autoplay blocked by browser policy — user taps play */});
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const tracks: any[] = player.getVariantTracks();
@@ -236,28 +306,26 @@ export function VideoPlayer({
             (t, i, arr) => arr.findIndex((x: any) => x.height === t.height) === i
           )
           .sort((a, b) => (b.height ?? 0) - (a.height ?? 0));
-
         setQualityTracks(
           unique.map((t) => ({ id: t.id, height: t.height, bandwidth: t.bandwidth }))
         );
-      } catch (err) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (err: any) {
         if (cancelled) return;
+        if (err?.code === 1001 && err?.data?.[1] === 423) {
+          setPlayerState("processing");
+          return;
+        }
         console.error("[Shaka] Load failed:", err);
         setError("Could not load the video stream. Please check the URL.");
         setPlayerState("error");
       }
     };
 
-    init();
+    load();
 
-    return () => {
-      cancelled = true;
-      if (shakaRef.current) {
-        shakaRef.current.destroy();
-        shakaRef.current = null;
-      }
-    };
-  }, [videoUrl, adaptive, initKey]);
+    return () => { cancelled = true; };
+  }, [videoUrl, adaptive, shakaReady, initKey]);
 
   // ── Fullscreen sync ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -275,6 +343,23 @@ export function VideoPlayer({
     }, SAVE_INTERVAL_MS);
     return () => clearInterval(id);
   }, [isPlaying, progressKey]);
+
+  // ── Auto-retry when Cloudinary is still processing (423) ──────────────────
+  useEffect(() => {
+    if (playerState !== "processing") return;
+    const id = setTimeout(() => setInitKey((k) => k + 1), 10_000);
+    return () => clearTimeout(id);
+  }, [playerState, initKey]);
+
+  // ── Loading timeout — show an error if stuck loading for too long ──────────
+  useEffect(() => {
+    if (playerState !== "loading" && playerState !== "buffering") return;
+    const id = setTimeout(() => {
+      setError("Video is taking too long to load. It may still be processing on Cloudinary — try again in a few minutes.");
+      setPlayerState("error");
+    }, 25_000);
+    return () => clearTimeout(id);
+  }, [playerState]);
 
   // ── Controls auto-hide ─────────────────────────────────────────────────────
   const scheduleHide = useCallback(() => {
@@ -383,20 +468,40 @@ export function VideoPlayer({
   );
 
   // ── Video element event handlers ───────────────────────────────────────────
+  const seekToSaved = useCallback((video: HTMLVideoElement) => {
+    if (!adaptive) {
+      const saved = localStorage.getItem(progressKeyRef.current);
+      if (saved) {
+        const t = parseFloat(saved);
+        if (isFinite(t) && t > 0 && video.duration > 0 && t < video.duration - 1) {
+          video.currentTime = t;
+        }
+      }
+    }
+  }, [adaptive]);
+
   const handleLoadedMetadata = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     setDuration(video.duration);
     setPlayerState("ready");
+    seekToSaved(video);
+  }, [seekToSaved]);
 
-    const saved = localStorage.getItem(progressKey);
-    if (saved) {
-      const t = parseFloat(saved);
-      if (isFinite(t) && t > 0 && t < video.duration - 2) {
-        video.currentTime = t;
-      }
+  const hasSeekedRef = useRef(false);
+  useEffect(() => { hasSeekedRef.current = false; }, [progressKey]);
+
+  const handleCanPlay = useCallback(() => {
+    const video = videoRef.current;
+    setError(null);
+    setPlayerState((prev) =>
+      prev === "idle" || prev === "loading" ? "ready" : prev
+    );
+    if (video && !hasSeekedRef.current) {
+      hasSeekedRef.current = true;
+      seekToSaved(video);
     }
-  }, [progressKey]);
+  }, [seekToSaved]);
 
   const handleTimeUpdate = useCallback(() => {
     const video = videoRef.current;
@@ -408,13 +513,6 @@ export function VideoPlayer({
       onProgressUpdate((t / d) * 100, t);
     }
   }, [onProgressUpdate]);
-
-  const handleCanPlay = useCallback(() => {
-    setError(null);
-    setPlayerState((prev) =>
-      prev === "idle" || prev === "loading" ? "ready" : prev
-    );
-  }, []);
 
   const handlePlay = useCallback(() => setPlayerState("playing"), []);
 
@@ -485,7 +583,7 @@ export function VideoPlayer({
         className="w-full h-full object-contain"
         playsInline
         preload="metadata"
-        src={adaptive ? undefined : videoUrl}
+        src={adaptive ? undefined : (videoUrl || undefined)}
         onLoadedMetadata={handleLoadedMetadata}
         onTimeUpdate={handleTimeUpdate}
         onCanPlay={handleCanPlay}
@@ -502,6 +600,17 @@ export function VideoPlayer({
       {showSpinner && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/50 pointer-events-none transition-opacity duration-200">
           <Spinner size={52} />
+        </div>
+      )}
+
+      {/* ── Processing overlay (Cloudinary 423) ── */}
+      {playerState === "processing" && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/90 z-40 gap-4 p-6 text-center">
+          <Spinner size={40} />
+          <p className="text-white text-sm font-semibold">Video is being processed</p>
+          <p className="text-white/40 text-xs max-w-xs leading-relaxed">
+            This usually takes a moment. Retrying automatically…
+          </p>
         </div>
       )}
 

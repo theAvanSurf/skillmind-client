@@ -2,6 +2,7 @@
 
 import { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import "@/lib/axios"; // registers global 401 → /login interceptor
 
 const queryClient = new QueryClient();
 

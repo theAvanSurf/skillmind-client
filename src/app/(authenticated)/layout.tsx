@@ -22,11 +22,16 @@ export default async function Layout({ children }: Props) {
         redirect("/login");
     }
 
+    const activeProfileCookie = cookieStore.get("activeProfileId");
+    if (!activeProfileCookie?.value) {
+        redirect("/select-profile");
+    }
+
     let profileName = "User";
     let profileAvatar: string | null = null;
     let profiles: Profile[] = [];
     let connectedDevices: Device[] = [];
-    let activeProfileId = cookieStore.get("activeProfileId")?.value ?? "";
+    let activeProfileId = activeProfileCookie.value;
 
     try {
         const raw = await Promise.race<unknown | null>([
@@ -64,7 +69,7 @@ export default async function Layout({ children }: Props) {
                 initialDevices={connectedDevices}
                 activeProfileId={activeProfileId}
             />
-            <main className="mx-auto max-w-360 px-4 pb-14 pt-0 sm:px-6 lg:px-10">
+            <main className="w-full px-4 pb-14 pt-0 sm:px-6 lg:px-10">
                 {children}
             </main>
         </div>

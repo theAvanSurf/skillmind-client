@@ -23,13 +23,6 @@ export default function StripeConnectStep() {
   const [apiError, setApiError] = useState("")
 
   const doSignUp = async () => {
-    // Skip signUp if already done — userId is the reliable signal,
-    // not completedStep (which reaches 7 before signUp for professors)
-    if (userId) {
-      router.push("/register/step5")
-      return
-    }
-
     setLoading(true)
     setApiError("")
     try {
@@ -114,11 +107,10 @@ export default function StripeConnectStep() {
         type="button"
         disabled={loading}
         onClick={doSignUp}
-        className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all ${
-          !loading
+        className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all ${!loading
             ? "bg-linear-to-r from-blue-500 to-blue-600 shadow-lg shadow-blue-500/25 hover:from-blue-600 hover:to-blue-700"
             : "cursor-not-allowed bg-white/10 text-white/30"
-        }`}
+          }`}
       >
         {loading ? (
           <>

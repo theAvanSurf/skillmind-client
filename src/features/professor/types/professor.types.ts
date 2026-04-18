@@ -168,16 +168,16 @@ export type QuestionType = "MultipleChoice" | "TrueFalse" | "OpenText"
 export interface QuestionOption {
   id: string
   questionId: string
-  text: string
+  optionText: string
   isCorrect: boolean
 }
 
 export interface ExamQuestion {
   id: string
   examId: string
-  text: string
+  questionText: string
   questionType: QuestionType
-  pointValue: number
+  points: number
   order: number
   options: QuestionOption[]
 }
@@ -187,9 +187,10 @@ export interface Exam {
   courseId: string
   title: string
   description: string | null
-  timeLimitMinutes: number | null
+  durationMinutes: number | null
   passingScore: number
-  isPublished: boolean
+  status: string
+  questionCount: number
   questions: ExamQuestion[]
 }
 
@@ -197,17 +198,17 @@ export interface CreateExamRequest {
   courseId: string
   title: string
   description?: string
-  timeLimitMinutes?: number
+  durationMinutes?: number
   passingScore: number
 }
 
 export interface CreateExamQuestionRequest {
   examId: string
-  text: string
+  questionText: string
   questionType: QuestionType
-  pointValue: number
+  points: number
   order: number
-  options: { text: string; isCorrect: boolean }[]
+  options: { optionText: string; isCorrect: boolean }[]
 }
 
 export interface ExamAttempt {
@@ -249,4 +250,35 @@ export interface Certificate {
   templateId: string
   issuedAt: string
   certificateUrl: string | null
+}
+
+// ── Live Streaming ─────────────────────────────────────────────────────────────
+
+export interface LiveSession {
+  id: string
+  courseId: string
+  courseTitle: string
+  title: string
+  description: string | null
+  embedUrl: string | null
+  youTubeBroadcastId: string | null
+  visibility: string
+  status: "Scheduled" | "Live" | "Ended" | "Cancelled"
+  scheduledAt: string | null
+  startedAt: string | null
+  endedAt: string | null
+  createdOn: string
+}
+
+export interface LiveSessionCreated extends LiveSession {
+  streamKey: string | null
+  rtmpIngestUrl: string | null
+}
+
+export interface CreateLiveSessionRequest {
+  courseId: string
+  title: string
+  description?: string
+  visibility?: "Public" | "Unlisted" | "Private"
+  scheduledAt?: string
 }

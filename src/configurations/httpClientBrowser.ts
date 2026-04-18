@@ -20,6 +20,7 @@ export const httpClientBrowser = axios.create({
     baseURL: "/api",
     timeout: 10000,
     headers: { "Content-Type": "application/json" },
+    withCredentials: true,
 });
 
 httpClientBrowser.interceptors.response.use(
@@ -27,9 +28,10 @@ httpClientBrowser.interceptors.response.use(
     (error: AxiosError<ErrorResponseData>) => {
         if (error.response?.status === 401) {
             if (typeof window !== "undefined") {
-                // Clear active profile when logging out
-                document.cookie = "activeProfileId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-                window.location.href = "/login";
+                // httpOnly cookie can't be cleared via document.cookie — call server-side DELETE
+                fetch("/api/sessions/select-profile", { method: "DELETE" }).finally(() => {
+                    window.location.href = "/login";
+                });
             }
         }
 

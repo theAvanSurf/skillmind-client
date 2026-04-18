@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useLogin } from "@/features/auth/hooks/useAuth";
 import type { LoginAPIResponse } from "@/features/auth/types/auth.types";
+import { createUserStorage } from "@/store/create-user-storage";
 
 
 const inputCls =
@@ -12,6 +13,7 @@ const inputCls =
 
 async function shouldGoToContinue(loginData: LoginAPIResponse): Promise<boolean> {
     if (!loginData.hasProfiles || loginData.profilesCount === 0) {
+        createUserStorage.getState().setCompletedStep(5);
         return true;
     }
 
@@ -28,6 +30,10 @@ async function shouldGoToContinue(loginData: LoginAPIResponse): Promise<boolean>
     }
 }
 
+function isProfessor(roles: string[] | undefined): boolean {
+    return Array.isArray(roles) && roles.some((r) => r.toLowerCase() === "professor");
+}
+
 export default function LoginForm() {
     const router = useRouter();
     const [userName, setUserName] = useState("");
@@ -41,6 +47,11 @@ export default function LoginForm() {
             { userName, password },
             {
                 onSuccess: async (data) => {
+                    if (isProfessor(data.roles)) {
+                        router.push("/professor/dashboard");
+                        return;
+                    }
+
                     const continueFlow = await shouldGoToContinue(data);
                     router.push(continueFlow ? "/continue" : "/main");
                 }
@@ -138,7 +149,7 @@ export default function LoginForm() {
             <p className="mt-5 text-center text-xs text-white/40">
                 Don&apos;t have an account?{" "}
                 <button
-                    onClick={() => router.push("/register")}
+                    onClick={() => router.push("/register?fresh=1")}
                     className="font-semibold text-blue-400 transition hover:text-blue-300"
                 >
                     Create Account
