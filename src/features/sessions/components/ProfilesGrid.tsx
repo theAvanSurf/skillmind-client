@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LogOut, MonitorX, Loader2 } from "lucide-react";
+import { LogOut, MonitorX, Loader2, Trash2 } from "lucide-react";
 import { sileo } from "sileo";
 import { Profile as ProfileCard } from "@/features/profiles/components/profile";
 import { useSession } from "@/features/sessions/hooks/useSession";
@@ -88,7 +88,7 @@ function ErrorState({ message }: { message?: string }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export function ProfilesGrid() {
-    const { data, error, isLoading } = useSession();
+    const { data, error, isLoading, refetch } = useSession();
     const router = useRouter();
 
     const [isManaging, setIsManaging] = useState(false);
@@ -97,6 +97,7 @@ export function ProfilesGrid() {
     const [occupiedProfile, setOccupiedProfile] = useState<Profile | null>(null);
     // Initialise synchronously so the first render already knows the device ID
     const [myDeviceId] = useState<string>(() => getOrCreateDeviceId());
+    const [kickingDeviceId, setKickingDeviceId] = useState<string | null>(null);
 
     // ── Helpers: profile occupancy ──────────────────────────────────────────
 
@@ -174,6 +175,20 @@ export function ProfilesGrid() {
         }
     };
 
+    const handleKick = async (profile: Profile) => {
+        const device = data?.connectedDevices?.find(
+            (d) => d.profileId === profile.id && d.deviceId !== myDeviceId
+        );
+        if (!device) return;
+        setKickingDeviceId(device.deviceId);
+        try {
+            await fetch(`/api/sessions/devices/${device.deviceId}`, { method: "DELETE" });
+        } finally {
+            setKickingDeviceId(null);
+            await refetch();
+        }
+    };
+
     // ── Render ───────────────────────────────────────────────────────────────
 
     return (
@@ -239,14 +254,30 @@ export function ProfilesGrid() {
                                     />
 
                                     {/* "In use" overlay for profiles held by other devices */}
-                                    {occupied && !isManaging && (
-                                        <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-md">
-                                            <MonitorX size={28} className="text-white/80 drop-shadow" />
-                                            <span className="rounded bg-black/60 px-2 py-0.5 text-xs font-semibold text-white/90">
-                                                In use
-                                            </span>
-                                        </div>
-                                    )}
+                                    {occupied && !isManaging && (() => {
+                                        const occupyingDevice = data?.connectedDevices?.find(
+                                            (d) => d.profileId === profile.id && d.deviceId !== myDeviceId
+                                        );
+                                        const isKicking = kickingDeviceId === occupyingDevice?.deviceId;
+                                        return (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-md bg-black/50">
+                                                <MonitorX size={28} className="text-white/80 drop-shadow" />
+                                                <span className="rounded bg-black/60 px-2 py-0.5 text-xs font-semibold text-white/90">
+                                                    In use
+                                                </span>
+                                                {occupyingDevice && (
+                                                    <button
+                                                        onClick={(e) => { e.stopPropagation(); handleKick(profile); }}
+                                                        disabled={isKicking}
+                                                        className="flex items-center gap-1 rounded-lg border border-red-500/40 bg-red-500/20 px-2.5 py-1 text-xs font-semibold text-red-300 transition hover:bg-red-500/40 disabled:opacity-50"
+                                                    >
+                                                        {isKicking ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+                                                        Kick
+                                                    </button>
+                                                )}
+                                            </div>
+                                        );
+                                    })()}
 
                                     {/* "Active here" badge for our device */}
                                     {mine && !occupied && !isManaging && (

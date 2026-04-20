@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react"
 import Link from "next/link"
-import { ChevronDown, UserCircle2, LogOut } from "lucide-react"
+import { ChevronDown, UserCircle2, LogOut, Monitor } from "lucide-react"
 import type { Profile } from "@/features/profiles/types/profile.types"
 import type { Device } from "@/types/session.types"
 import { useSignOut } from "@/features/auth/hooks/useSignOut"
@@ -131,11 +131,19 @@ export function ProfileSwitcher({
               Manage Profiles
             </Link>
             <Link
-              href="/settings"
+              href="/settings/profile"
               className="block rounded-xl border border-white/10 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-white/75 transition hover:bg-white/8 hover:text-white"
               onClick={() => setOpen(false)}
             >
               Settings
+            </Link>
+            <Link
+              href="/settings/sessions"
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-white/10 px-3 py-2 text-center text-xs font-semibold uppercase tracking-wide text-white/75 transition hover:bg-white/8 hover:text-white"
+              onClick={() => setOpen(false)}
+            >
+              <Monitor size={12} />
+              Sessions
             </Link>
             <button
               onClick={() => { setOpen(false); void signOut(); }}

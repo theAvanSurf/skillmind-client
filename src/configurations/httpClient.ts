@@ -20,7 +20,7 @@ const extractMessage = (data: ErrorResponseData): string => {
 
 export const httpClient = axios.create({
     baseURL: AppConfiguration.API_URL,
-    timeout: 10000,
+    timeout: 0,
     headers: { "Content-Type": "application/json" },
 });
 

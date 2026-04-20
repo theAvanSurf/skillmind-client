@@ -18,7 +18,7 @@ const extractMessage = (data: ErrorResponseData): string => {
 
 export const httpClientBrowser = axios.create({
     baseURL: "/api",
-    timeout: 10000,
+    timeout: 0,
     headers: { "Content-Type": "application/json" },
     withCredentials: true,
 });

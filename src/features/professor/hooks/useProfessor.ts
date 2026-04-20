@@ -222,7 +222,10 @@ export function useIssueCertificate() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: svc.issueCertificate,
-    onSuccess: (data) => qc.invalidateQueries({ queryKey: professorKeys.certs(data.courseId) }),
+    onSuccess: (data) => {
+      qc.invalidateQueries({ queryKey: professorKeys.certs(data.courseId) })
+      qc.invalidateQueries({ queryKey: professorKeys.allCerts })
+    },
   })
 }
 
