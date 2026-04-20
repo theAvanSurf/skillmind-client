@@ -171,7 +171,7 @@ export default function PlanSelectionStep() {
       </div>
 
       {apiError && (
-        <p className="mt-3 text-center text-xs text-red-400">{apiError}</p>
+        <p className="mt-3 text-center text-xs text-red-400 whitespace-pre-line">{apiError}</p>
       )}
 
       <div className="mt-4 grid grid-cols-2 gap-3">

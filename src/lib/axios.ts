@@ -10,12 +10,20 @@ function handle401Redirect() {
   });
 }
 
+function extractErrorMessage(error: any): string {
+  const data = error.response?.data;
+  if (!data) return error.message || "Something went wrong";
+  const errors: string[] = data.errors ?? (Array.isArray(data) ? data : []);
+  if (errors.length > 0) return errors.join("\n");
+  return data.message || error.message || "Something went wrong";
+}
+
 // Global interceptor covers all raw axios.* calls (profile-services, session-services, etc.)
 axios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) handle401Redirect();
-    return Promise.reject(error);
+    return Promise.reject(new Error(extractErrorMessage(error)));
   }
 );
 
@@ -31,6 +39,6 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) handle401Redirect();
-    return Promise.reject(error);
+    return Promise.reject(new Error(extractErrorMessage(error)));
   }
 );

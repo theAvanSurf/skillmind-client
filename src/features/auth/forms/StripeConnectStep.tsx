@@ -88,7 +88,7 @@ export default function StripeConnectStep() {
       </div>
 
       {apiError && (
-        <p className="mb-3 text-center text-xs text-red-400">{apiError}</p>
+        <p className="mb-3 text-center text-xs text-red-400 whitespace-pre-line">{apiError}</p>
       )}
 
       {/* Connect button */}
