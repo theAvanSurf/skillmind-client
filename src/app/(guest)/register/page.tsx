@@ -1,7 +1,10 @@
-"use client";
-
+import { Suspense } from "react";
 import RegisterForm from "@/features/auth/forms/RegisterForm";
 
 export default function RegisterPage() {
-  return <RegisterForm />;
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
+  );
 }

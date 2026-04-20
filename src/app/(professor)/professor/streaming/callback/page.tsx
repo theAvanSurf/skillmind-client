@@ -1,10 +1,10 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { Suspense, useEffect, useRef } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Loader2 } from "lucide-react"
 
-export default function YouTubeCallbackPage() {
+function CallbackInner() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const called = useRef(false)
@@ -40,5 +40,13 @@ export default function YouTubeCallbackPage() {
                 <span className="text-sm">Connecting YouTube account...</span>
             </div>
         </div>
+    )
+}
+
+export default function YouTubeCallbackPage() {
+    return (
+        <Suspense>
+            <CallbackInner />
+        </Suspense>
     )
 }
