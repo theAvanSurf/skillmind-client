@@ -13,16 +13,16 @@ interface MainNavProps {
   initialProfiles?: Profile[]
   initialDevices?: Device[]
   activeProfileId?: string
+  isProfessor?: boolean
 }
 
-const navLinks = [
+const baseNavLinks = [
   { label: "Home", href: "/main" },
   { label: "My Courses", href: "/my-courses" },
   { label: "Courses", href: "/courses" },
-  { label: "Resources", href: "/resources" },
-  { label: "Community", href: "/community" },
-  { label: "Teach", href: "/professor/dashboard" },
 ]
+
+const teachLink = { label: "Teach", href: "/professor/dashboard" }
 
 export default function MainNav({
   userName = "Sabrina",
@@ -30,7 +30,9 @@ export default function MainNav({
   initialProfiles = [],
   initialDevices = [],
   activeProfileId = "",
+  isProfessor = false,
 }: MainNavProps) {
+  const navLinks = isProfessor ? [...baseNavLinks, teachLink] : baseNavLinks
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const mounted = useRef(false)

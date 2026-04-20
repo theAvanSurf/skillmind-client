@@ -166,6 +166,11 @@ export default function CoursePlayerPage() {
   const [accessDenied, setAccessDenied] = useState(false);
   const [activeTab, setActiveTab] = useState<"lessons" | "live" | "exams">("lessons");
   const progressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // startTime comes from backend; only valid for the lesson that was last saved
+  const [startTime, setStartTime] = useState<number | undefined>(undefined);
+  const lastProgressLessonIdRef = useRef<string | null>(null);
+  // tracks current progress % without localStorage
+  const progressPctRef = useRef(0);
 
   const selectedSeason = useMemo(() => {
     if (!courseDetails || !seasonId) return null;
@@ -237,14 +242,10 @@ export default function CoursePlayerPage() {
           setSeasonId(targetSeasonId);
           setLessonId(targetLessonId);
 
-          // Seed localStorage with backend timestamp so VideoPlayer seeks correctly
+          // Store backend timestamp so VideoPlayer can seek to resume position
           if (progressResp?.lastLessonId && progressResp?.lastTimestampSeconds > 0) {
-            try {
-              localStorage.setItem(
-                `vp:course-${id}-lesson-${progressResp.lastLessonId}`,
-                String(progressResp.lastTimestampSeconds)
-              );
-            } catch { /* ignore */ }
+            lastProgressLessonIdRef.current = progressResp.lastLessonId;
+            setStartTime(progressResp.lastTimestampSeconds);
           }
         }
       } catch {
@@ -258,18 +259,19 @@ export default function CoursePlayerPage() {
   }, [id]); // Only re-fetch when the course changes, not on every lesson switch
 
   // Fire immediately when a lesson becomes active — creates the DB record right away
-  // so it shows in Watch History even if user leaves before the 10s debounce fires.
+  // so it shows in Watch History even if user leaves before the debounce fires.
   useEffect(() => {
     if (!lessonId || !courseDetails) return;
-    const storedPct = parseFloat(localStorage.getItem(`course-progress:${courseDetails.id}`) || "0") || 0;
-    const storedTime = parseFloat(localStorage.getItem(`vp:course-${courseDetails.id}-lesson-${lessonId}`) || "0") || 0;
+    const resumeTime = lessonId === lastProgressLessonIdRef.current
+      ? (startTime ?? 0)
+      : 0;
     fetch(`/api/courses/${courseDetails.id}/progress`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        progressPercent: Math.round(storedPct),
+        progressPercent: Math.round(progressPctRef.current),
         lastLessonId: lessonId,
-        lastTimestampSeconds: storedTime,
+        lastTimestampSeconds: resumeTime,
       }),
     })
       .then(() => window.dispatchEvent(new Event("skillmind:progress-updated")))
@@ -385,13 +387,10 @@ export default function CoursePlayerPage() {
               seasonName={selectedSeason?.title}
               chapterName={selectedLesson?.title}
               episodeNumber={selectedLesson ? 1 : undefined}
-              storageKey={lessonId ? `course-${courseDetails.id}-lesson-${lessonId}` : `course-${courseDetails.id}`}
+              startTime={lessonId === lastProgressLessonIdRef.current ? startTime : undefined}
               onProgressUpdate={(progress, time) => {
-                try {
-                  localStorage.setItem(`course-progress:${courseDetails.id}`, String(progress));
-                  localStorage.setItem(`course-last-time:${courseDetails.id}`, String(time));
-                } catch { /* ignore */ }
-                // Debounce backend sync — fire at most once every 10s
+                progressPctRef.current = progress;
+                // Debounce backend sync — fire at most once every 3s
                 if (progressTimerRef.current) clearTimeout(progressTimerRef.current);
                 progressTimerRef.current = setTimeout(() => {
                   fetch(`/api/courses/${courseDetails.id}/progress`, {

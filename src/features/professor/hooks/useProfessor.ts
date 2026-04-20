@@ -25,6 +25,7 @@ export const professorKeys = {
   attempts: (examId: string) => ["professor", "attempts", examId] as const,
   certTemplates: ["professor", "cert-templates"] as const,
   certs: (courseId: string) => ["professor", "certs", courseId] as const,
+  allCerts: ["professor", "certs", "all"] as const,
   livestreams: ["professor", "livestreams"] as const,
   youtubeStatus: ["professor", "youtube", "status"] as const,
 }
@@ -191,6 +192,10 @@ export function useCertsByCourse(courseId: string) {
   })
 }
 
+export function useAllMyCerts() {
+  return useQuery({ queryKey: professorKeys.allCerts, queryFn: svc.getAllMyCerts })
+}
+
 export function useCreateCertificateTemplate() {
   const qc = useQueryClient()
   return useMutation({
@@ -207,7 +212,7 @@ export function useUpdateCertificateTemplate() {
       req,
     }: {
       templateId: string
-      req: { title?: string; bodyHtml?: string; signatureImageUrl?: string; isDefault?: boolean }
+      req: { title?: string; templateKey?: string; signatureImageUrl?: string; isDefault?: boolean }
     }) => svc.updateCertificateTemplate(templateId, req),
     onSuccess: () => qc.invalidateQueries({ queryKey: professorKeys.certTemplates }),
   })

@@ -237,7 +237,7 @@ export interface CertificateTemplate {
   professorId: string
   courseId: string | null
   title: string
-  bodyHtml: string
+  templateKey: string
   signatureImageUrl: string | null
   isDefault: boolean
   createdOn: string
@@ -247,9 +247,13 @@ export interface Certificate {
   id: string
   studentProfileId: string
   courseId: string
+  courseTitle: string
+  studentName: string
   templateId: string
+  templateKey: string
+  uniqueCode: string
+  isManuallyIssued: boolean
   issuedAt: string
-  certificateUrl: string | null
 }
 
 // ── Live Streaming ─────────────────────────────────────────────────────────────

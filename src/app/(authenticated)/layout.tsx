@@ -8,6 +8,20 @@ import { normalizeSession } from "@/app/api/sessions/normalizeSession";
 import type { Profile } from "@/features/profiles/types/profile.types";
 import type { Device } from "@/types/session.types";
 
+function isProfessorToken(token: string): boolean {
+    try {
+        const payloadPart = token.split(".")[1];
+        if (!payloadPart) return false;
+        const normalized = payloadPart.replace(/-/g, "+").replace(/_/g, "/");
+        const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+        const payload = JSON.parse(Buffer.from(padded, "base64").toString("utf8")) as Record<string, unknown>;
+        const role = String(payload.role ?? payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ?? "").toLowerCase();
+        return role === "professor";
+    } catch {
+        return false;
+    }
+}
+
 const SESSION_FETCH_TIMEOUT_MS = 1500;
 
 type Props = {
@@ -27,6 +41,7 @@ export default async function Layout({ children }: Props) {
         redirect("/select-profile");
     }
 
+    const isProfessor = isProfessorToken(userToken.value);
     let profileName = "User";
     let profileAvatar: string | null = null;
     let profiles: Profile[] = [];
@@ -68,6 +83,7 @@ export default async function Layout({ children }: Props) {
                 initialProfiles={profiles}
                 initialDevices={connectedDevices}
                 activeProfileId={activeProfileId}
+                isProfessor={isProfessor}
             />
             <main className="w-full px-4 pb-14 pt-0 sm:px-6 lg:px-10">
                 {children}

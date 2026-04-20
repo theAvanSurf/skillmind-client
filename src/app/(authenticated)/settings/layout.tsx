@@ -28,7 +28,7 @@ export default function SettingsLayout({ children }: { children: ReactNode }) {
                     ))}
                 </nav>
             </aside>
-            <main className="flex-1 p-6 lg:p-12 overflow-y-auto w-full max-w-4xl mx-auto">
+            <main className="flex-1 p-6 lg:p-10 overflow-y-auto w-full">
                 {children}
             </main>
         </div>

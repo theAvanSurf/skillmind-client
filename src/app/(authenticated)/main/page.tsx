@@ -38,18 +38,12 @@ export default function MainPage() {
   const [isPersonalized, setIsPersonalized] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [inProgress, setInProgress] = useState<EnrolledCourse[]>([])
-  const [recentlyWatched, setRecentlyWatched] = useState<EnrolledCourse[]>([])
   const [newCourses, setNewCourses] = useState<BrowseCourseDto[]>([])
 
   const fetchDynamic = useCallback(() => {
     fetch("/api/courses/my-enrollments/in-progress")
       .then(res => res.json())
       .then((data: EnrolledCourse[]) => { if (Array.isArray(data)) setInProgress(data) })
-      .catch(console.error)
-
-    fetch("/api/courses/my-enrollments/recently-watched")
-      .then(res => res.json())
-      .then((data: EnrolledCourse[]) => { if (Array.isArray(data)) setRecentlyWatched(data) })
       .catch(console.error)
   }, [])
 
@@ -98,7 +92,7 @@ export default function MainPage() {
   const heroSlides = recommendations.slice(0, 5)
 
   return (
-    <main className="min-h-screen w-full space-y-12 pt-[72px] pb-8">
+    <main className="min-h-screen w-full space-y-12 pb-8">
 
       {/* ── HERO CAROUSEL ─────────────────────────────────────────────────── */}
       {isLoading ? (
@@ -192,75 +186,6 @@ export default function MainPage() {
                 </motion.button>
               )
             })}
-          </div>
-        </section>
-      )}
-
-      {/* ── RECENTLY WATCHED ──────────────────────────────────────────────── */}
-      {recentlyWatched.length > 0 && (
-        <section>
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-bold text-white">Watch History</h2>
-              <p className="text-xs text-white/40 mt-0.5">Everything you've watched</p>
-            </div>
-            <button
-              onClick={() => router.push("/my-courses")}
-              className="text-xs font-semibold text-blue-400 hover:text-blue-300 transition"
-            >
-              See all
-            </button>
-          </div>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            {recentlyWatched.map((course, i) => (
-              <motion.button
-                key={course.id}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.25, delay: i * 0.04 }}
-                onClick={() => resumeCourse(course.id, course.category)}
-                className="group relative overflow-hidden rounded-xl border border-white/8 bg-white/4 text-left transition hover:-translate-y-1 hover:border-white/20"
-              >
-                <div className="relative aspect-video overflow-hidden bg-black/40">
-                  <img
-                    src={course.thumbnailUrl || ""}
-                    alt={course.title}
-                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.04]"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 transition group-hover:opacity-100">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90">
-                      <Play size={16} fill="black" className="text-black ml-0.5" />
-                    </div>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/50">
-                    <div
-                      className="h-full transition-all"
-                      style={{
-                        width: `${course.progressPercent}%`,
-                        backgroundColor: course.progressPercent >= 100 ? "#22c55e" : "#3b82f6",
-                      }}
-                    />
-                  </div>
-                  {course.progressPercent >= 100 && (
-                    <div className="absolute top-2 right-2 rounded-full bg-green-600/90 px-2 py-0.5 text-[10px] font-bold text-white backdrop-blur-sm">
-                      Done
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  {course.category && (
-                    <p className="text-[0.6rem] font-bold uppercase tracking-wider text-blue-300">{course.category}</p>
-                  )}
-                  <p className="mt-0.5 line-clamp-1 text-sm font-semibold text-white">{course.title}</p>
-                  {course.lastLessonTitle && (
-                    <p className="mt-0.5 line-clamp-1 text-[0.68rem] text-white/50">{course.lastLessonTitle}</p>
-                  )}
-                  <p className="mt-1 text-[0.65rem] text-white/40">
-                    {course.progressPercent >= 100 ? "Completed" : `${course.progressPercent}% watched`}
-                  </p>
-                </div>
-              </motion.button>
-            ))}
           </div>
         </section>
       )}

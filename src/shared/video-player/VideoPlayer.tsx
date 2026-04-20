@@ -47,6 +47,8 @@ export interface VideoPlayerProps {
   seasonName?: string;
   chapterName?: string;
   episodeNumber?: number;
+  /** @deprecated kept for call-site compatibility, ignored — progress persisted via DB */
+  storageKey?: string;
   /** Called on timeupdate with (progress%, currentTime) */
   onProgressUpdate?: (progress: number, currentTime: number) => void;
   /** Called when playback ends */
@@ -58,7 +60,6 @@ export interface VideoPlayerProps {
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const CONTROLS_HIDE_MS = 3_000;
-const SAVE_INTERVAL_MS = 2_000;
 
 let shakaModulePromise: Promise<typeof import("shaka-player")> | null = null;
 
@@ -116,6 +117,8 @@ export function VideoPlayer({
   const onShakaErrorRef = useRef<((e: any) => void) | null>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const onShakaBufferingRef = useRef<((e: any) => void) | null>(null);
+  const startTimeRef = useRef(startTime);
+  useEffect(() => { startTimeRef.current = startTime; }, [startTime]);
   const [shakaReady, setShakaReady] = useState(false);
 
   // ── State ──────────────────────────────────────────────────────────────────
@@ -138,14 +141,6 @@ export function VideoPlayer({
     () => isAdaptiveUrl(videoUrl) && !nativeHls,
     [videoUrl, nativeHls]
   );
-
-  const progressKey = useMemo(
-    () => `${STORAGE_PREFIX}${storageKey ?? videoUrl}`,
-    [storageKey, videoUrl]
-  );
-
-  const progressKeyRef = useRef(progressKey);
-  useEffect(() => { progressKeyRef.current = progressKey; }, [progressKey]);
 
   const progressPct = useMemo(
     () => (duration > 0 ? (currentTime / duration) * 100 : 0),
@@ -290,9 +285,8 @@ export function VideoPlayer({
       if (cancelled) return;
 
       try {
-        const savedRaw = localStorage.getItem(progressKeyRef.current);
-        const startAt = savedRaw ? parseFloat(savedRaw) : 0;
-        await player.load(videoUrl, isFinite(startAt) && startAt > 0 ? startAt : undefined);
+        const st = startTimeRef.current;
+        await player.load(videoUrl, st && isFinite(st) && st > 0 ? st : undefined);
         if (cancelled) return;
 
         setPlayerState("ready");
@@ -333,16 +327,6 @@ export function VideoPlayer({
     document.addEventListener("fullscreenchange", onFsChange);
     return () => document.removeEventListener("fullscreenchange", onFsChange);
   }, []);
-
-  // ── Periodic progress save ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isPlaying) return;
-    const id = setInterval(() => {
-      const t = videoRef.current?.currentTime;
-      if (t != null && t > 0) localStorage.setItem(progressKey, String(t));
-    }, SAVE_INTERVAL_MS);
-    return () => clearInterval(id);
-  }, [isPlaying, progressKey]);
 
   // ── Auto-retry when Cloudinary is still processing (423) ──────────────────
   useEffect(() => {
@@ -468,28 +452,23 @@ export function VideoPlayer({
   );
 
   // ── Video element event handlers ───────────────────────────────────────────
-  const seekToSaved = useCallback((video: HTMLVideoElement) => {
-    if (!adaptive) {
-      const saved = localStorage.getItem(progressKeyRef.current);
-      if (saved) {
-        const t = parseFloat(saved);
-        if (isFinite(t) && t > 0 && video.duration > 0 && t < video.duration - 1) {
-          video.currentTime = t;
-        }
-      }
+  const seekToStart = useCallback((video: HTMLVideoElement) => {
+    const st = startTimeRef.current;
+    if (st && isFinite(st) && st > 0 && video.duration > 0 && st < video.duration - 1) {
+      video.currentTime = st;
     }
-  }, [adaptive]);
+  }, []);
 
   const handleLoadedMetadata = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
     setDuration(video.duration);
     setPlayerState("ready");
-    seekToSaved(video);
-  }, [seekToSaved]);
+    seekToStart(video);
+  }, [seekToStart]);
 
   const hasSeekedRef = useRef(false);
-  useEffect(() => { hasSeekedRef.current = false; }, [progressKey]);
+  useEffect(() => { hasSeekedRef.current = false; }, [startTime]);
 
   const handleCanPlay = useCallback(() => {
     const video = videoRef.current;
@@ -499,9 +478,9 @@ export function VideoPlayer({
     );
     if (video && !hasSeekedRef.current) {
       hasSeekedRef.current = true;
-      seekToSaved(video);
+      seekToStart(video);
     }
-  }, [seekToSaved]);
+  }, [seekToStart]);
 
   const handleTimeUpdate = useCallback(() => {
     const video = videoRef.current;
@@ -527,9 +506,8 @@ export function VideoPlayer({
 
   const handleEnded = useCallback(() => {
     setPlayerState("ended");
-    localStorage.removeItem(progressKey);
     onEnded?.();
-  }, [onEnded, progressKey]);
+  }, [onEnded]);
 
   const handleVideoError = useCallback(() => {
     setError("Failed to load the video.");

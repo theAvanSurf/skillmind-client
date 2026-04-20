@@ -190,7 +190,7 @@ export async function getCertificateTemplates(): Promise<CertificateTemplate[]> 
 export async function createCertificateTemplate(req: {
   courseId?: string
   title: string
-  bodyHtml: string
+  templateKey: string
   signatureImageUrl?: string
   isDefault?: boolean
 }): Promise<CertificateTemplate> {
@@ -200,7 +200,7 @@ export async function createCertificateTemplate(req: {
 
 export async function updateCertificateTemplate(
   templateId: string,
-  req: { title?: string; bodyHtml?: string; signatureImageUrl?: string; isDefault?: boolean }
+  req: { title?: string; templateKey?: string; signatureImageUrl?: string; isDefault?: boolean }
 ): Promise<CertificateTemplate> {
   const { data } = await api.put<CertificateTemplate>(`/certificates/templates/${templateId}`, req)
   return data
@@ -208,6 +208,11 @@ export async function updateCertificateTemplate(
 
 export async function getCertsByCourse(courseId: string): Promise<Certificate[]> {
   const { data } = await api.get<Certificate[]>(`/certificates/course/${courseId}`)
+  return data
+}
+
+export async function getAllMyCerts(): Promise<Certificate[]> {
+  const { data } = await api.get<Certificate[]>('/certificates/all')
   return data
 }
 
